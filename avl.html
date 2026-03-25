@@ -1,514 +1,1206 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AVL Tree — DSViz</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg:#080b12;--surface:#0f1420;--surface2:#151c2e;
-    --border:#1e2d4a;--accent:#a78bfa;--accent2:#ff6b6b;
-    --accent3:#00e5ff;--accent4:#34d399;
-    --text:#e2e8f0;--text-dim:#64748b;--text-muted:#334155;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(167,139,250,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(8,11,18,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-  .logo{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent);text-decoration:none;}
-  .page-title{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;}
-  .nav-back{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);text-decoration:none;border:1px solid var(--border);padding:0.3rem 0.8rem;border-radius:4px;transition:all 0.2s;}
-  .nav-back:hover{color:var(--accent);border-color:var(--accent);}
-  .layout{display:flex;flex:1;margin-top:60px;position:relative;z-index:1;}
-  .sidebar{width:350px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;height:calc(100vh - 60px);overflow-x:hidden;overflow-y:auto;position:sticky;top:60px;box-sizing:border-box;}
-.sidebar>*{max-width:100%;box-sizing:border-box;}
-.input-field{max-width:100%;}
-.sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-.sidebar::-webkit-scrollbar-track {
-  background: var(--surface2);
-}
-.sidebar::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-  .sidebar-section{display:flex;flex-direction:column;gap:0.75rem;}
-  .sidebar-label{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
-  .input-row{display:flex;gap:0.5rem;}
-  .input-field{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Mono',monospace;font-size:0.85rem;outline:none;transition:border-color 0.2s;}
-  .input-field:focus{border-color:var(--accent);}
-  .input-field::placeholder{color:var(--text-muted);}
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  .btn{padding:0.6rem 1rem;border-radius:6px;border:1px solid;font-family:'DM Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;font-weight:500;min-width:70px;}
-  .btn-primary{background:rgba(167,139,250,0.1);border-color:var(--accent);color:var(--accent);}
-  .btn-primary:hover{background:rgba(167,139,250,0.2);box-shadow:0 0 15px rgba(167,139,250,0.2);}
-  .btn-danger{background:rgba(255,107,107,0.1);border-color:var(--accent2);color:var(--accent2);}
-  .btn-danger:hover{background:rgba(255,107,107,0.2);}
-  .btn-cyan{background:rgba(0,229,255,0.1);border-color:var(--accent3);color:var(--accent3);}
-  .btn-cyan:hover{background:rgba(0,229,255,0.2);}
-  .btn-full{width:100%;text-align:center;}
-  .presets{display:flex;flex-wrap:wrap;gap:0.35rem;}
-  .preset-chip{font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;}
-  .preset-chip:hover{border-color:var(--accent);color:var(--accent);}
-  .speed-row{display:flex;align-items:center;gap:0.75rem;}
-  .speed-label{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);white-space:nowrap;}
-  input[type=range]{flex:1;accent-color:var(--accent);}
-  .log{position:fixed;top:100px;right:20px;max-width:300px;z-index:200;pointer-events:none;display:flex;flex-direction:column;gap:0.5rem;}
-  .log-entry{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.75rem;line-height:1.6;color:var(--text-dim);animation:popIn 0.4s ease-out forwards;box-shadow:0 4px 20px rgba(0, 0, 0, 0.4);}
-  @keyframes popIn{0%{opacity:0;transform:translateY(-20px) scale(0.9);}100%{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes popOut{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-20px) scale(0.9);}}
-  .log-entry.fade-out{animation:popOut 0.4s ease-in forwards !important;}
-  .log-entry.success{color:var(--accent4);border-color:var(--accent4);}
-  .log-entry.error{color:var(--accent2);border-color:var(--accent2);}
-  .log-entry.info{color:var(--accent);border-color:var(--accent);}
-  .log-entry.warn{color:#f59e0b;border-color:#f59e0b;}
-  .log-entry.rotate{color:#f97316;border-color:#f97316;}
-  .balance-display{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.75rem;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-dim);min-height:60px;}
-  .balance-row{display:flex;justify-content:space-between;margin-bottom:0.3rem;}
-  .balance-val{font-weight:bold;}
-  .bal-ok{color:var(--accent4);}
-  .bal-bad{color:var(--accent2);}
-  .canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  .canvas-header{padding:1rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .canvas-title{font-size:0.8rem;font-family:'DM Mono',monospace;color:var(--text-dim);}
-  .stats-row{display:flex;gap:1.5rem;}
-  .stat{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-muted);}
-  .stat span{color:var(--accent);}
-  #avlCanvas{flex:1;width:100%;}
-  .info-bar{padding:0.75rem 2rem;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:2rem;}
-  .info-msg{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);}
-  .info-msg .hl{color:var(--accent);}
-  .legend{display:flex;flex-direction:column;gap:0.4rem;}
-  .legend-item{display:flex;align-items:center;gap:0.6rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);}
-  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-  .mobile-toggle{display:none;}
-  @media (max-width: 900px) {
-    .layout{flex-direction:column;}
-    .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:70vh;max-height:70vh;border-right:none;border-top:1px solid var(--border);border-radius:12px 12px 0 0;transform:translateY(calc(100% - 50px));transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);z-index:105;box-shadow:0 -2px 20px rgba(0, 0, 0, 0.3);touch-action:none;}
-    .sidebar.active{transform:translateY(0);}
-    .sidebar::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:var(--border);border-radius:3px;cursor:grab;}
-    .sidebar::before:active{cursor:grabbing;}
-    .sidebar-drag-area{position:absolute;top:0;left:0;right:0;height:50px;cursor:grab;z-index:10;}
-    .sidebar-drag-area:active{cursor:grabbing;}
-    #avlCanvas{min-height:400px;}
-  }
-  @media (max-width: 600px) {
-    .sidebar{height:80vh;max-height:80vh;}
-  }
-</style>
-</head>
-<body>
-<nav>
-  <a href="index.html" class="logo">DS/VIZ</a>
-  <span class="page-title">AVL TREE — SELF-BALANCING BST</span>
-  <a href="index.html" class="nav-back">← Home</a>
-</nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AVL Tree — DSViz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --surface: #0f1420;
+        --surface2: #151c2e;
+        --border: #1e2d4a;
+        --accent: #a78bfa;
+        --accent2: #ff6b6b;
+        --accent3: #00e5ff;
+        --accent4: #34d399;
+        --text: #e2e8f0;
+        --text-dim: #64748b;
+        --text-muted: #334155;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(167, 139, 250, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(167, 139, 250, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background: rgba(8, 11, 18, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        font-family: "Space Mono", monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .page-title {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        letter-spacing: 2px;
+      }
+      .nav-back {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      .nav-back:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .layout {
+        display: flex;
+        flex: 1;
+        margin-top: 60px;
+        position: relative;
+        z-index: 1;
+      }
+      .sidebar {
+        width: 350px;
+        min-width: 280px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: calc(100vh - 60px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        position: sticky;
+        top: 60px;
+        box-sizing: border-box;
+      }
+      .sidebar > * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .input-field {
+        max-width: 100%;
+      }
+      .sidebar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .sidebar::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      .sidebar::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      .sidebar::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+      .sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .sidebar-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .input-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .input-field {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.6rem 0.8rem;
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .input-field:focus {
+        border-color: var(--accent);
+      }
+      .input-field::placeholder {
+        color: var(--text-muted);
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .btn {
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+        border: 1px solid;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+        min-width: 70px;
+      }
+      .btn-primary {
+        background: rgba(167, 139, 250, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .btn-primary:hover {
+        background: rgba(167, 139, 250, 0.2);
+        box-shadow: 0 0 15px rgba(167, 139, 250, 0.2);
+      }
+      .btn-danger {
+        background: rgba(255, 107, 107, 0.1);
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-danger:hover {
+        background: rgba(255, 107, 107, 0.2);
+      }
+      .btn-cyan {
+        background: rgba(0, 229, 255, 0.1);
+        border-color: var(--accent3);
+        color: var(--accent3);
+      }
+      .btn-cyan:hover {
+        background: rgba(0, 229, 255, 0.2);
+      }
+      .btn-full {
+        width: 100%;
+        text-align: center;
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .preset-chip {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+      .preset-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .speed-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .speed-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+      }
+      .log {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        max-width: 300px;
+        z-index: 200;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        display: none;
+      }
+      .log-entry {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: var(--text-dim);
+        animation: popIn 0.4s ease-out forwards;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes popOut {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+      }
+      .log-entry.fade-out {
+        animation: popOut 0.4s ease-in forwards !important;
+      }
+      .log-entry.success {
+        color: var(--accent4);
+        border-color: var(--accent4);
+      }
+      .log-entry.error {
+        color: var(--accent2);
+        border-color: var(--accent2);
+      }
+      .log-entry.info {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .log-entry.warn {
+        color: #f59e0b;
+        border-color: #f59e0b;
+      }
+      .log-entry.rotate {
+        color: #f97316;
+        border-color: #f97316;
+      }
+      .balance-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        min-height: 60px;
+      }
+      .balance-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+      }
+      .balance-val {
+        font-weight: bold;
+      }
+      .bal-ok {
+        color: var(--accent4);
+      }
+      .bal-bad {
+        color: var(--accent2);
+      }
+      .canvas-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .canvas-header {
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .canvas-title {
+        font-size: 0.8rem;
+        font-family: "DM Mono", monospace;
+        color: var(--text-dim);
+      }
+      .stats-row {
+        display: flex;
+        gap: 1.5rem;
+      }
+      .stat {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+      .stat span {
+        color: var(--accent);
+      }
+      #avlCanvas {
+        flex: 1;
+        width: 100%;
+      }
+      .info-bar {
+        padding: 0.75rem 2rem;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+      .info-msg {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .info-msg .hl {
+        color: var(--accent);
+      }
+      .legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .mobile-toggle {
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          position: fixed;
+          top: 142px;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: auto;
+          max-height: 80vh;
+          border-right: none;
+          border-top: 1px solid var(--border);
+          border-radius: 12px 12px 0 0;
+          transform: translateY(calc(100% - 60px));
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 105;
+          box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+          touch-action: none;
+          overflow-y: auto;
+        }
+        .sidebar.active {
+          transform: translateY(0);
+          z-index: 120;
+        }
+        .sidebar::before {
+          content: "";
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 50px;
+          height: 5px;
+          background: var(--border);
+          border-radius: 3px;
+          cursor: grab;
+          z-index: 15;
+        }
+        .sidebar::before:active {
+          cursor: grabbing;
+        }
+        .log {
+          position: fixed !important;
+          top: 70px !important;
+          right: 10px !important;
+          left: 10px !important;
+          max-width: none !important;
+          max-height: 200px !important;
+          overflow-y: auto !important;
+          z-index: 125 !important;
+          background: var(--surface) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 8px !important;
+          padding: 0.5rem !important;
+        }
+        #avlCanvas {
+          min-height: 400px;
+        }
+      }
+      @media (max-width: 600px) {
+        .sidebar {
+          height: 80vh;
+          max-height: 80vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="index.html" class="logo">DS/VIZ</a>
+      <span class="page-title">AVL TREE — SELF-BALANCING BST</span>
+      <a href="index.html" class="nav-back">← Home</a>
+    </nav>
 
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Insert Node</div>
-      <div class="input-row">
-        <input id="insertVal" class="input-field" type="number" placeholder="Value (1–99)" min="1" max="99">
-        <button class="btn btn-primary" onclick="animInsert()">Insert</button>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Insert Node</div>
+          <div class="input-row">
+            <input
+              id="insertVal"
+              class="input-field"
+              type="number"
+              placeholder="Value (1–99)"
+              min="1"
+              max="99"
+            />
+            <button
+              class="btn btn-primary"
+              onclick="
+                animInsert();
+                closeSidebarMobile();
+              "
+            >
+              Insert
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Delete Node</div>
+          <div class="input-row">
+            <input
+              id="deleteVal"
+              class="input-field"
+              type="number"
+              placeholder="Value to delete"
+            />
+            <button
+              class="btn btn-danger"
+              onclick="
+                animDelete();
+                closeSidebarMobile();
+              "
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Quick Load</div>
+          <div class="presets">
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([10, 20, 30, 40, 50]);
+                closeSidebarMobile();
+              "
+            >
+              Causes Rotations
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([30, 20, 40, 10, 25, 35, 50]);
+                closeSidebarMobile();
+              "
+            >
+              Balanced
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([1, 2, 3, 4, 5, 6, 7]);
+                closeSidebarMobile();
+              "
+            >
+              Sequential
+            </div>
+            <div class="preset-chip" onclick="clearTree()">🗑 Clear</div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Animation Speed</div>
+          <div class="speed-row">
+            <span class="speed-label">Slow</span>
+            <input type="range" id="speedRange" min="1" max="5" value="2" />
+            <span class="speed-label">Fast</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Balance Factors</div>
+          <div class="balance-display" id="balanceDisplay">
+            Insert nodes to see balance factors...
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Operation Log</div>
+          <div class="log" id="log"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Legend</div>
+          <div class="legend">
+            <div class="legend-item">
+              <div
+                class="legend-dot"
+                style="background: #a78bfa; box-shadow: 0 0 6px #a78bfa"
+              ></div>
+              Default node
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #f59e0b"></div>
+              Checking balance
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #f97316"></div>
+              Rotating
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #34d399"></div>
+              Balanced / Done
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #ff6b6b"></div>
+              Deleting
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="canvas-area">
+        <div class="canvas-header">
+          <span class="canvas-title">// AVL TREE — HEIGHT-BALANCED BST</span>
+          <div class="stats-row">
+            <div class="stat">Nodes: <span id="statNodes">0</span></div>
+            <div class="stat">Height: <span id="statHeight">0</span></div>
+            <div class="stat">Rotations: <span id="statRot">0</span></div>
+          </div>
+        </div>
+        <canvas id="avlCanvas"></canvas>
+        <div class="info-bar">
+          <div class="info-msg" id="infoMsg">
+            AVL tree guarantees O(log n) — try inserting
+            <span class="hl">10,20,30</span> to see LL rotation!
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Delete Node</div>
-      <div class="input-row">
-        <input id="deleteVal" class="input-field" type="number" placeholder="Value to delete">
-        <button class="btn btn-danger" onclick="animDelete()">Delete</button>
-      </div>
-    </div>
+    <script>
+      // ── AVL Node ──────────────────────────────────────────────
+      class AVLNode {
+        constructor(val) {
+          this.val = val;
+          this.left = null;
+          this.right = null;
+          this.h = 1;
+          this.x = 0;
+          this.y = 0;
+        }
+      }
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Quick Load</div>
-      <div class="presets">
-        <div class="preset-chip" onclick="loadPreset([10,20,30,40,50])">Causes Rotations</div>
-        <div class="preset-chip" onclick="loadPreset([30,20,40,10,25,35,50])">Balanced</div>
-        <div class="preset-chip" onclick="loadPreset([1,2,3,4,5,6,7])">Sequential</div>
-        <div class="preset-chip" onclick="clearTree()">🗑 Clear</div>
-      </div>
-    </div>
+      let root = null,
+        animating = false,
+        totalRotations = 0;
+      let animState = {};
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Animation Speed</div>
-      <div class="speed-row">
-        <span class="speed-label">Slow</span>
-        <input type="range" id="speedRange" min="1" max="5" value="2">
-        <span class="speed-label">Fast</span>
-      </div>
-    </div>
+      function H(n) {
+        return n ? n.h : 0;
+      }
+      function bf(n) {
+        return n ? H(n.left) - H(n.right) : 0;
+      }
+      function upH(n) {
+        if (n) n.h = 1 + Math.max(H(n.left), H(n.right));
+      }
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Balance Factors</div>
-      <div class="balance-display" id="balanceDisplay">Insert nodes to see balance factors...</div>
-    </div>
+      function rotR(y) {
+        const x = y.left,
+          T2 = x.right;
+        x.right = y;
+        y.left = T2;
+        upH(y);
+        upH(x);
+        totalRotations++;
+        return x;
+      }
+      function rotL(x) {
+        const y = x.right,
+          T2 = y.left;
+        y.left = x;
+        x.right = T2;
+        upH(x);
+        upH(y);
+        totalRotations++;
+        return y;
+      }
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Operation Log</div>
-      <div class="log" id="log"></div>
-    </div>
+      let rotationLog = [];
 
-    <div class="sidebar-section">
-      <div class="sidebar-label">Legend</div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa;box-shadow:0 0 6px #a78bfa"></div>Default node</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Checking balance</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>Rotating</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Balanced / Done</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Deleting</div>
-      </div>
-    </div>
-  </aside>
+      function avlInsert(node, val) {
+        if (!node) return new AVLNode(val);
+        if (val < node.val) node.left = avlInsert(node.left, val);
+        else if (val > node.val) node.right = avlInsert(node.right, val);
+        else return node;
+        upH(node);
+        const b = bf(node);
+        if (b > 1 && val < node.left.val) {
+          rotationLog.push({ type: "LL", node: node.val });
+          return rotR(node);
+        }
+        if (b < -1 && val > node.right.val) {
+          rotationLog.push({ type: "RR", node: node.val });
+          return rotL(node);
+        }
+        if (b > 1 && val > node.left.val) {
+          rotationLog.push({ type: "LR", node: node.val });
+          node.left = rotL(node.left);
+          return rotR(node);
+        }
+        if (b < -1 && val < node.right.val) {
+          rotationLog.push({ type: "RL", node: node.val });
+          node.right = rotR(node.right);
+          return rotL(node);
+        }
+        return node;
+      }
 
-  <div class="canvas-area">
-    <div class="canvas-header">
-      <span class="canvas-title">// AVL TREE — HEIGHT-BALANCED BST</span>
-      <div class="stats-row">
-        <div class="stat">Nodes: <span id="statNodes">0</span></div>
-        <div class="stat">Height: <span id="statHeight">0</span></div>
-        <div class="stat">Rotations: <span id="statRot">0</span></div>
-      </div>
-    </div>
-    <canvas id="avlCanvas"></canvas>
-    <div class="info-bar">
-      <div class="info-msg" id="infoMsg">AVL tree guarantees O(log n) — try inserting <span class="hl">10,20,30</span> to see LL rotation!</div>
-    </div>
-  </div>
-</div>
+      function minNode(n) {
+        while (n.left) n = n.left;
+        return n;
+      }
+      function avlDelete(node, val) {
+        if (!node) return null;
+        if (val < node.val) node.left = avlDelete(node.left, val);
+        else if (val > node.val) node.right = avlDelete(node.right, val);
+        else {
+          if (!node.left) return node.right;
+          if (!node.right) return node.left;
+          const s = minNode(node.right);
+          node.val = s.val;
+          node.right = avlDelete(node.right, s.val);
+        }
+        upH(node);
+        const b = bf(node);
+        if (b > 1 && bf(node.left) >= 0) return rotR(node);
+        if (b > 1 && bf(node.left) < 0) {
+          node.left = rotL(node.left);
+          return rotR(node);
+        }
+        if (b < -1 && bf(node.right) <= 0) return rotL(node);
+        if (b < -1 && bf(node.right) > 0) {
+          node.right = rotR(node.right);
+          return rotL(node);
+        }
+        return node;
+      }
 
-<script>
-// ── AVL Node ──────────────────────────────────────────────
-class AVLNode {
-  constructor(val) { this.val=val;this.left=null;this.right=null;this.h=1;this.x=0;this.y=0; }
-}
+      function countN(n) {
+        return n ? 1 + countN(n.left) + countN(n.right) : 0;
+      }
 
-let root=null, animating=false, totalRotations=0;
-let animState={};
+      // ── Canvas ────────────────────────────────────────────────
+      const canvas = document.getElementById("avlCanvas");
+      const ctx = canvas.getContext("2d");
+      const NR = 26;
 
-function H(n){return n?n.h:0;}
-function bf(n){return n?H(n.left)-H(n.right):0;}
-function upH(n){if(n)n.h=1+Math.max(H(n.left),H(n.right));}
+      function resizeCanvas() {
+        const area = canvas.parentElement;
+        canvas.width = area.clientWidth;
+        canvas.height = area.clientHeight - 100;
+      }
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        layoutTree();
+        draw();
+      });
+      resizeCanvas();
 
-function rotR(y){
-  const x=y.left,T2=x.right;
-  x.right=y;y.left=T2;
-  upH(y);upH(x);
-  totalRotations++;
-  return x;
-}
-function rotL(x){
-  const y=x.right,T2=y.left;
-  y.left=x;x.right=T2;
-  upH(x);upH(y);
-  totalRotations++;
-  return y;
-}
+      function getS(val) {
+        return (
+          animState[val] || {
+            color: "#a78bfa",
+            glowColor: "#a78bfa",
+            scale: 1,
+            opacity: 1,
+          }
+        );
+      }
 
-let rotationLog=[];
+      function layoutTree() {
+        if (!root) return;
+        function assign(n, d, lo, hi) {
+          if (!n) return;
+          n.x = (lo + hi) / 2;
+          n.y = 60 + d * 80;
+          assign(n.left, d + 1, lo, (lo + hi) / 2);
+          assign(n.right, d + 1, (lo + hi) / 2, hi);
+        }
+        assign(root, 0, NR + 10, canvas.width - NR - 10);
+      }
 
-function avlInsert(node,val){
-  if(!node)return new AVLNode(val);
-  if(val<node.val)node.left=avlInsert(node.left,val);
-  else if(val>node.val)node.right=avlInsert(node.right,val);
-  else return node;
-  upH(node);
-  const b=bf(node);
-  if(b>1&&val<node.left.val){rotationLog.push({type:'LL',node:node.val});return rotR(node);}
-  if(b<-1&&val>node.right.val){rotationLog.push({type:'RR',node:node.val});return rotL(node);}
-  if(b>1&&val>node.left.val){rotationLog.push({type:'LR',node:node.val});node.left=rotL(node.left);return rotR(node);}
-  if(b<-1&&val<node.right.val){rotationLog.push({type:'RL',node:node.val});node.right=rotR(node.right);return rotL(node);}
-  return node;
-}
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!root) {
+          ctx.fillStyle = "#1e2d4a44";
+          ctx.font = "14px 'DM Mono',monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            "Empty tree — insert values to begin",
+            canvas.width / 2,
+            canvas.height / 2,
+          );
+          return;
+        }
+        layoutTree();
+        drawEdges(root);
+        drawNodes(root);
+        updateStats();
+        updateBalanceDisplay();
+      }
 
-function minNode(n){while(n.left)n=n.left;return n;}
-function avlDelete(node,val){
-  if(!node)return null;
-  if(val<node.val)node.left=avlDelete(node.left,val);
-  else if(val>node.val)node.right=avlDelete(node.right,val);
-  else{
-    if(!node.left)return node.right;
-    if(!node.right)return node.left;
-    const s=minNode(node.right);
-    node.val=s.val;
-    node.right=avlDelete(node.right,s.val);
-  }
-  upH(node);
-  const b=bf(node);
-  if(b>1&&bf(node.left)>=0)return rotR(node);
-  if(b>1&&bf(node.left)<0){node.left=rotL(node.left);return rotR(node);}
-  if(b<-1&&bf(node.right)<=0)return rotL(node);
-  if(b<-1&&bf(node.right)>0){node.right=rotR(node.right);return rotL(node);}
-  return node;
-}
+      function drawEdges(n) {
+        if (!n) return;
+        const drawE = (f, t) => {
+          const st = getS(t.val);
+          ctx.save();
+          ctx.globalAlpha = Math.min(getS(f.val).opacity, st.opacity);
+          ctx.strokeStyle =
+            t.val in animState ? animState[t.val].glowColor : "#1e2d4a";
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = t.val in animState ? 8 : 0;
+          ctx.shadowColor = ctx.strokeStyle;
+          ctx.beginPath();
+          ctx.moveTo(f.x, f.y);
+          ctx.lineTo(t.x, t.y);
+          ctx.stroke();
+          ctx.restore();
+        };
+        if (n.left) {
+          drawE(n, n.left);
+          drawEdges(n.left);
+        }
+        if (n.right) {
+          drawE(n, n.right);
+          drawEdges(n.right);
+        }
+      }
 
-function countN(n){return n?1+countN(n.left)+countN(n.right):0;}
+      function drawNodes(n) {
+        if (!n) return;
+        const s = getS(n.val);
+        const r = NR * s.scale;
+        ctx.save();
+        ctx.globalAlpha = s.opacity;
+        ctx.translate(n.x, n.y);
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = s.glowColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fillStyle = "#0f1420";
+        ctx.fill();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // balance factor badge
+        const bfv = bf(n);
+        const bfColor =
+          Math.abs(bfv) > 1
+            ? "#ff6b6b"
+            : Math.abs(bfv) === 1
+              ? "#f59e0b"
+              : "#34d399";
+        ctx.beginPath();
+        ctx.arc(r * 0.7, r * 0.7, 9, 0, Math.PI * 2);
+        ctx.fillStyle = bfColor + "33";
+        ctx.fill();
+        ctx.strokeStyle = bfColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = bfColor;
+        ctx.font = "bold 8px 'DM Mono',monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(bfv, r * 0.7, r * 0.7);
+        // main value
+        ctx.fillStyle = s.color;
+        ctx.font = `bold 13px 'DM Mono',monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(n.val, 0, 0);
+        // height label
+        ctx.fillStyle = s.color + "88";
+        ctx.font = "9px 'DM Mono',monospace";
+        ctx.fillText("h=" + n.h, 0, r + 12);
+        ctx.restore();
+        drawNodes(n.left);
+        drawNodes(n.right);
+      }
 
-// ── Canvas ────────────────────────────────────────────────
-const canvas=document.getElementById('avlCanvas');
-const ctx=canvas.getContext('2d');
-const NR=26;
+      function updateStats() {
+        document.getElementById("statNodes").textContent = countN(root);
+        document.getElementById("statHeight").textContent = H(root);
+        document.getElementById("statRot").textContent = totalRotations;
+      }
 
-function resizeCanvas(){
-  const area=canvas.parentElement;
-  canvas.width=area.clientWidth;
-  canvas.height=area.clientHeight-100;
-}
-window.addEventListener('resize',()=>{resizeCanvas();layoutTree();draw();});
-resizeCanvas();
+      function updateBalanceDisplay() {
+        const el = document.getElementById("balanceDisplay");
+        if (!root) {
+          el.textContent = "Insert nodes...";
+          return;
+        }
+        let html = "";
+        function collect(n) {
+          if (!n) return;
+          const b = bf(n);
+          const cls = Math.abs(b) > 1 ? "bal-bad" : "bal-ok";
+          html += `<div class="balance-row"><span>Node <b>${n.val}</b> (h=${n.h})</span><span class="${cls} balance-val">BF=${b >= 0 ? "+" : ""}${b}</span></div>`;
+          collect(n.left);
+          collect(n.right);
+        }
+        collect(root);
+        el.innerHTML = html || "All balanced!";
+      }
 
-function getS(val){return animState[val]||{color:'#a78bfa',glowColor:'#a78bfa',scale:1,opacity:1};}
+      // ── Animation helpers ─────────────────────────────────────
+      function getSpeed() {
+        const v = parseInt(document.getElementById("speedRange").value);
+        return [700, 500, 350, 200, 100][v - 1];
+      }
+      function log(msg, type = "") {
+        const el = document.getElementById("log");
+        const d = document.createElement("div");
+        d.className = "log-entry " + type;
+        d.textContent = "> " + msg;
+        el.appendChild(d);
+        el.style.display = "block";
+        setTimeout(() => {
+          d.classList.add("fade-out");
+          setTimeout(() => {
+            d.remove();
+            if (el.children.length === 0) el.style.display = "none";
+          }, 400);
+        }, 3500);
+      }
+      function setInfo(msg) {
+        document.getElementById("infoMsg").innerHTML = msg;
+      }
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
 
-function layoutTree(){
-  if(!root)return;
-  function assign(n,d,lo,hi){
-    if(!n)return;
-    n.x=(lo+hi)/2;n.y=60+d*80;
-    assign(n.left,d+1,lo,(lo+hi)/2);
-    assign(n.right,d+1,(lo+hi)/2,hi);
-  }
-  assign(root,0,NR+10,canvas.width-NR-10);
-}
+      async function animInsert() {
+        if (animating) return;
+        const val = parseInt(document.getElementById("insertVal").value);
+        if (isNaN(val) || val < 1 || val > 999) {
+          log("Enter valid value", "error");
+          return;
+        }
+        function find(n, v) {
+          if (!n) return false;
+          if (n.val === v) return true;
+          return v < n.val ? find(n.left, v) : find(n.right, v);
+        }
+        if (find(root, val)) {
+          log(`${val} already exists!`, "error");
+          return;
+        }
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!root){
-    ctx.fillStyle='#1e2d4a44';ctx.font="14px 'DM Mono',monospace";ctx.textAlign='center';
-    ctx.fillText('Empty tree — insert values to begin',canvas.width/2,canvas.height/2);
-    return;
-  }
-  layoutTree();
-  drawEdges(root);
-  drawNodes(root);
-  updateStats();
-  updateBalanceDisplay();
-}
+        animating = true;
+        animState = {};
+        rotationLog = [];
+        log(`Inserting ${val}...`, "info");
+        setInfo(`Inserting <span class="hl">${val}</span> into AVL tree...`);
 
-function drawEdges(n){
-  if(!n)return;
-  const drawE=(f,t)=>{
-    const st=getS(t.val);
-    ctx.save();ctx.globalAlpha=Math.min(getS(f.val).opacity,st.opacity);
-    ctx.strokeStyle=t.val in animState?animState[t.val].glowColor:'#1e2d4a';
-    ctx.lineWidth=1.5;ctx.shadowBlur=t.val in animState?8:0;ctx.shadowColor=ctx.strokeStyle;
-    ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(t.x,t.y);ctx.stroke();ctx.restore();
-  };
-  if(n.left){drawE(n,n.left);drawEdges(n.left);}
-  if(n.right){drawE(n,n.right);drawEdges(n.right);}
-}
+        // Trace path
+        let cur = root;
+        while (cur) {
+          animState[cur.val] = {
+            color: "#f59e0b",
+            glowColor: "#f59e0b",
+            scale: 1.1,
+            opacity: 1,
+          };
+          draw();
+          await sleep(getSpeed());
+          delete animState[cur.val];
+          cur = val < cur.val ? cur.left : cur.right;
+        }
 
-function drawNodes(n){
-  if(!n)return;
-  const s=getS(n.val);
-  const r=NR*s.scale;
-  ctx.save();ctx.globalAlpha=s.opacity;ctx.translate(n.x,n.y);
-  ctx.shadowBlur=20;ctx.shadowColor=s.glowColor;
-  ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);
-  ctx.fillStyle='#0f1420';ctx.fill();
-  ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.stroke();
-  // balance factor badge
-  const bfv=bf(n);
-  const bfColor=Math.abs(bfv)>1?'#ff6b6b':Math.abs(bfv)===1?'#f59e0b':'#34d399';
-  ctx.beginPath();ctx.arc(r*0.7,r*0.7,9,0,Math.PI*2);
-  ctx.fillStyle=bfColor+'33';ctx.fill();
-  ctx.strokeStyle=bfColor;ctx.lineWidth=1;ctx.stroke();
-  ctx.shadowBlur=0;ctx.fillStyle=bfColor;ctx.font="bold 8px 'DM Mono',monospace";
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(bfv,r*0.7,r*0.7);
-  // main value
-  ctx.fillStyle=s.color;ctx.font=`bold 13px 'DM Mono',monospace`;
-  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n.val,0,0);
-  // height label
-  ctx.fillStyle=s.color+'88';ctx.font="9px 'DM Mono',monospace";
-  ctx.fillText('h='+n.h,0,r+12);
-  ctx.restore();
-  drawNodes(n.left);drawNodes(n.right);
-}
+        root = avlInsert(root, val);
+        layoutTree();
+        animState[val] = {
+          color: "#a78bfa",
+          glowColor: "#a78bfa",
+          scale: 1.5,
+          opacity: 0,
+        };
+        draw();
+        for (let i = 0; i <= 10; i++) {
+          animState[val] = {
+            color: "#a78bfa",
+            glowColor: "#a78bfa",
+            scale: 1.5 - 0.05 * i,
+            opacity: i / 10,
+          };
+          draw();
+          await sleep(20);
+        }
+        animState[val] = {
+          color: "#34d399",
+          glowColor: "#34d399",
+          scale: 1,
+          opacity: 1,
+        };
+        draw();
 
-function updateStats(){
-  document.getElementById('statNodes').textContent=countN(root);
-  document.getElementById('statHeight').textContent=H(root);
-  document.getElementById('statRot').textContent=totalRotations;
-}
+        if (rotationLog.length > 0) {
+          setInfo(
+            `<span class="hl">${val}</span> inserted — <span style="color:#f97316">${rotationLog.length} rotation(s) performed!</span>`,
+          );
+          for (const r of rotationLog) {
+            log(`  🔄 ${r.type} rotation at node ${r.node}`, "rotate");
+          }
+        } else {
+          setInfo(
+            `<span class="hl">${val}</span> inserted — tree already balanced!`,
+          );
+          log(`✓ ${val} inserted (no rotations needed)`, "success");
+        }
 
-function updateBalanceDisplay(){
-  const el=document.getElementById('balanceDisplay');
-  if(!root){el.textContent='Insert nodes...';return;}
-  let html='';
-  function collect(n){
-    if(!n)return;
-    const b=bf(n);
-    const cls=Math.abs(b)>1?'bal-bad':'bal-ok';
-    html+=`<div class="balance-row"><span>Node <b>${n.val}</b> (h=${n.h})</span><span class="${cls} balance-val">BF=${b>=0?'+':''}${b}</span></div>`;
-    collect(n.left);collect(n.right);
-  }
-  collect(root);
-  el.innerHTML=html||'All balanced!';
-}
+        await sleep(600);
+        animState = {};
+        draw();
+        document.getElementById("insertVal").value = "";
+        animating = false;
+      }
 
-// ── Animation helpers ─────────────────────────────────────
-function getSpeed(){const v=parseInt(document.getElementById('speedRange').value);return [700,500,350,200,100][v-1];}
-function log(msg,type=''){const el=document.getElementById('log');const d=document.createElement('div');d.className='log-entry '+type;d.textContent='> '+msg;el.appendChild(d);setTimeout(()=>{d.classList.add('fade-out');setTimeout(()=>d.remove(),400);},3500);}
-function setInfo(msg){document.getElementById('infoMsg').innerHTML=msg;}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+      async function animDelete() {
+        if (animating) return;
+        const val = parseInt(document.getElementById("deleteVal").value);
+        if (isNaN(val)) {
+          log("Enter value to delete", "error");
+          return;
+        }
+        function find(n, v) {
+          if (!n) return false;
+          if (n.val === v) return true;
+          return v < n.val ? find(n.left, v) : find(n.right, v);
+        }
+        if (!find(root, val)) {
+          log(`${val} not found`, "error");
+          return;
+        }
 
-async function animInsert(){
-  if(animating)return;
-  const val=parseInt(document.getElementById('insertVal').value);
-  if(isNaN(val)||val<1||val>999){log('Enter valid value','error');return;}
-  function find(n,v){if(!n)return false;if(n.val===v)return true;return v<n.val?find(n.left,v):find(n.right,v);}
-  if(find(root,val)){log(`${val} already exists!`,'error');return;}
+        animating = true;
+        animState[val] = {
+          color: "#ff6b6b",
+          glowColor: "#ff6b6b",
+          scale: 1.2,
+          opacity: 1,
+        };
+        draw();
+        log(`Deleting ${val}...`, "info");
+        setInfo(`Deleting <span class="hl">${val}</span> and rebalancing...`);
+        await sleep(getSpeed());
+        for (let i = 10; i >= 0; i--) {
+          animState[val] = {
+            color: "#ff6b6b",
+            glowColor: "#ff6b6b",
+            scale: 1 + 0.02 * (10 - i),
+            opacity: i / 10,
+          };
+          draw();
+          await sleep(25);
+        }
+        rotationLog = [];
+        root = avlDelete(root, val);
+        animState = {};
+        draw();
+        if (rotationLog.length > 0)
+          for (const r of rotationLog)
+            log(`  🔄 ${r.type} rotation at ${r.node}`, "rotate");
+        log(`✓ ${val} deleted`, "success");
+        setInfo(`<span class="hl">${val}</span> deleted and tree rebalanced.`);
+        document.getElementById("deleteVal").value = "";
+        animating = false;
+      }
 
-  animating=true;animState={};
-  rotationLog=[];
-  log(`Inserting ${val}...`,'info');
-  setInfo(`Inserting <span class="hl">${val}</span> into AVL tree...`);
+      async function loadPreset(vals) {
+        if (animating) return;
+        clearTree();
+        log(`Loading: [${vals.join(",")}]`, "info");
+        for (let v of vals) {
+          rotationLog = [];
+          root = avlInsert(root, v);
+          layoutTree();
+          draw();
+          if (rotationLog.length > 0)
+            log(
+              `  Insert ${v} → ${rotationLog.map((r) => r.type).join(",")} rotation(s)`,
+              "rotate",
+            );
+          await sleep(300);
+        }
+        animState = {};
+        draw();
+        log("✓ Preset loaded", "success");
+        setInfo(
+          `Preset loaded — <span class="hl">${totalRotations}</span> total rotations performed.`,
+        );
+      }
 
-  // Trace path
-  let cur=root;
-  while(cur){
-    animState[cur.val]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.1,opacity:1};
-    draw();
-    await sleep(getSpeed());
-    delete animState[cur.val];
-    cur=val<cur.val?cur.left:cur.right;
-  }
+      function clearTree() {
+        if (animating) return;
+        root = null;
+        animState = {};
+        totalRotations = 0;
+        draw();
+        document.getElementById("log").innerHTML = "";
+        setInfo("Tree cleared.");
+      }
 
-  root=avlInsert(root,val);
-  layoutTree();
-  animState[val]={color:'#a78bfa',glowColor:'#a78bfa',scale:1.5,opacity:0};
-  draw();
-  for(let i=0;i<=10;i++){animState[val]={color:'#a78bfa',glowColor:'#a78bfa',scale:1.5-0.05*i,opacity:i/10};draw();await sleep(20);}
-  animState[val]={color:'#34d399',glowColor:'#34d399',scale:1,opacity:1};
-  draw();
+      document.getElementById("insertVal").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") animInsert();
+      });
+      document.getElementById("deleteVal").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") animDelete();
+      });
 
-  if(rotationLog.length>0){
-    setInfo(`<span class="hl">${val}</span> inserted — <span style="color:#f97316">${rotationLog.length} rotation(s) performed!</span>`);
-    for(const r of rotationLog){
-      log(`  🔄 ${r.type} rotation at node ${r.node}`,'rotate');
-    }
-  } else {
-    setInfo(`<span class="hl">${val}</span> inserted — tree already balanced!`);
-    log(`✓ ${val} inserted (no rotations needed)`,'success');
-  }
+      // Mobile swipe functionality
+      const sidebar = document.querySelector(".sidebar");
+      if (window.innerWidth <= 900) {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
 
-  await sleep(600);
-  animState={};draw();
-  document.getElementById('insertVal').value='';
-  animating=false;
-}
+        sidebar.addEventListener("touchstart", (e) => {
+          startY = e.touches[0].clientY;
+          isDragging = true;
+          sidebar.style.transition = "none";
+        });
 
-async function animDelete(){
-  if(animating)return;
-  const val=parseInt(document.getElementById('deleteVal').value);
-  if(isNaN(val)){log('Enter value to delete','error');return;}
-  function find(n,v){if(!n)return false;if(n.val===v)return true;return v<n.val?find(n.left,v):find(n.right,v);}
-  if(!find(root,val)){log(`${val} not found`,'error');return;}
+        sidebar.addEventListener("touchmove", (e) => {
+          if (!isDragging) return;
 
-  animating=true;
-  animState[val]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1.2,opacity:1};
-  draw();
-  log(`Deleting ${val}...`,'info');
-  setInfo(`Deleting <span class="hl">${val}</span> and rebalancing...`);
-  await sleep(getSpeed());
-  for(let i=10;i>=0;i--){animState[val]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1+0.02*(10-i),opacity:i/10};draw();await sleep(25);}
-  rotationLog=[];
-  root=avlDelete(root,val);
-  animState={};draw();
-  if(rotationLog.length>0)for(const r of rotationLog)log(`  🔄 ${r.type} rotation at ${r.node}`,'rotate');
-  log(`✓ ${val} deleted`,'success');
-  setInfo(`<span class="hl">${val}</span> deleted and tree rebalanced.`);
-  document.getElementById('deleteVal').value='';
-  animating=false;
-}
+          currentY = e.touches[0].clientY;
+          let delta = currentY - startY;
 
-async function loadPreset(vals){
-  if(animating)return;
-  clearTree();
-  log(`Loading: [${vals.join(',')}]`,'info');
-  for(let v of vals){
-    rotationLog=[];
-    root=avlInsert(root,v);
-    layoutTree();draw();
-    if(rotationLog.length>0)log(`  Insert ${v} → ${rotationLog.map(r=>r.type).join(',')} rotation(s)`,'rotate');
-    await sleep(300);
-  }
-  animState={};draw();
-  log('✓ Preset loaded','success');
-  setInfo(`Preset loaded — <span class="hl">${totalRotations}</span> total rotations performed.`);
-}
+          if (sidebar.classList.contains("active")) {
+            // dragging down
+            if (delta > 0) {
+              sidebar.style.transform = `translateY(${delta}px)`;
+            }
+          } else {
+            // dragging up
+            if (delta < 0) {
+              const collapsedOffset = sidebar.offsetHeight - 60;
+              sidebar.style.transform = `translateY(${collapsedOffset + delta}px)`;
+            }
+          }
+        });
 
-function clearTree(){
-  if(animating)return;
-  root=null;animState={};totalRotations=0;draw();
-  document.getElementById('log').innerHTML='';
-  setInfo('Tree cleared.');
-}
+        function closeSidebarMobile() {
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove("active");
+          }
+        }
+        sidebar.addEventListener("touchend", () => {
+          isDragging = false;
+          sidebar.style.transition = "transform 0.3s ease";
 
-document.getElementById('insertVal').addEventListener('keydown',e=>{if(e.key==='Enter')animInsert();});
-document.getElementById('deleteVal').addEventListener('keydown',e=>{if(e.key==='Enter')animDelete();});
+          let delta = currentY - startY;
 
-// Mobile swipe functionality
-const sidebar=document.querySelector('.sidebar');
-if(window.innerWidth<=900){
-  let touchStartY=0,touchStartX=0,isDragging=false;
-  const minSwipeDistance=10,maxVelocityTime=500;
-  let lastTouchTime=0,lastTouchY=0;
-  
-  sidebar.addEventListener('touchstart',(e)=>{
-    touchStartY=e.touches[0].clientY;
-    touchStartX=e.touches[0].clientX;
-    isDragging=true;
-    lastTouchTime=Date.now();
-    lastTouchY=touchStartY;
-    sidebar.style.transition='none';
-  },false);
-  
-  sidebar.addEventListener('touchmove',(e)=>{
-    if(!isDragging)return;
-    const currentY=e.touches[0].clientY;
-    const offset=currentY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const newTransform=Math.max(0,Math.min(maxOffset,offset));
-    sidebar.style.transform=`translateY(calc(100% - 50px + ${newTransform}px))`;
-    lastTouchY=currentY;
-  },false);
-  
-  sidebar.addEventListener('touchend',(e)=>{
-    if(!isDragging)return;
-    isDragging=false;
-    const offset=lastTouchY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const velocity=(lastTouchY-touchStartY)/(Date.now()-lastTouchTime);
-    const threshold=maxOffset*0.3;
-    const isOpen=sidebar.classList.contains('active');
-    sidebar.style.transition='';
-    if(offset<-threshold||velocity<-0.5){sidebar.classList.add('active');}
-    else if(offset>threshold||velocity>0.5){sidebar.classList.remove('active');}
-    else{isOpen?sidebar.classList.add('active'):sidebar.classList.remove('active');}
-  },false);
-}
+          if (delta < -50) {
+            // swipe up → open
+            sidebar.classList.add("active");
+          } else if (delta > 50) {
+            // swipe down → close
+            sidebar.classList.remove("active");
+          } else {
+            // snap back
+            if (sidebar.classList.contains("active")) {
+              sidebar.classList.add("active");
+            } else {
+              sidebar.classList.remove("active");
+            }
+          }
 
-// Auto-collapse menu when buttons are clicked
-document.addEventListener('click',(e)=>{
-  if(window.innerWidth<=900&&sidebar.classList.contains('active')){
-    const isBtn=e.target.closest('button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div');
-    const isSidebarHeader=e.target.closest('.sidebar::before')||e.target.closest('.sidebar-drag-area');
-    if(isBtn&&!isSidebarHeader){sidebar.classList.remove('active');}
-  }
-});
+          sidebar.style.transform = "";
+        });
+      }
 
-loadPreset([30,20,40,10,25,35,50]);
-</script>
-</body>
+      // Auto-collapse menu when buttons are clicked
+      document.addEventListener("click", (e) => {
+        if (window.innerWidth <= 900 && sidebar.classList.contains("active")) {
+          const isBtn = e.target.closest(
+            "button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div",
+          );
+          const isSidebarHeader = e.target.closest(".sidebar::before");
+          if (isBtn && !isSidebarHeader) {
+            sidebar.classList.remove("active");
+          }
+        }
+      });
+
+      function closeSidebarMobile() {
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove("active");
+        }
+      }
+
+      loadPreset([30, 20, 40, 10, 25, 35, 50]);
+    </script>
+  </body>
 </html>

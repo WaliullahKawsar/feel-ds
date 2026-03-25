@@ -1,547 +1,1333 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Graph — DSViz</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root{--bg:#080b12;--surface:#0f1420;--surface2:#151c2e;--border:#1e2d4a;--accent:#f59e0b;--accent2:#00e5ff;--accent3:#a78bfa;--accent4:#34d399;--text:#e2e8f0;--text-dim:#64748b;--text-muted:#334155;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(245,158,11,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(245,158,11,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(8,11,18,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-  .logo{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent);text-decoration:none;}
-  .page-title{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;}
-  .nav-back{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);text-decoration:none;border:1px solid var(--border);padding:0.3rem 0.8rem;border-radius:4px;transition:all 0.2s;}
-  .nav-back:hover{color:var(--accent);border-color:var(--accent);}
-  .layout{display:flex;flex:1;margin-top:60px;position:relative;z-index:1;}
-  .sidebar{width:350px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;height:calc(100vh - 60px);overflow-x:hidden;overflow-y:auto;position:sticky;top:60px;box-sizing:border-box;}
-.sidebar>*{max-width:100%;box-sizing:border-box;}
-.input-field{max-width:100%;}
-.sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-.sidebar::-webkit-scrollbar-track {
-  background: var(--surface2);
-}
-.sidebar::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-  .sidebar-section{display:flex;flex-direction:column;gap:0.75rem;}
-  .sidebar-label{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
-  .input-row{display:flex;gap:0.5rem;}
-  .input-field{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Mono',monospace;font-size:0.82rem;outline:none;transition:border-color 0.2s;}
-  .input-field:focus{border-color:var(--accent);}
-  .input-field::placeholder{color:var(--text-muted);}
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  .btn{padding:0.6rem 1rem;border-radius:6px;border:1px solid;font-family:'DM Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;min-width:70px;}
-  .btn-amber{background:rgba(245,158,11,0.1);border-color:var(--accent);color:var(--accent);}
-  .btn-amber:hover{background:rgba(245,158,11,0.2);}
-  .btn-cyan{background:rgba(0,229,255,0.1);border-color:var(--accent2);color:var(--accent2);}
-  .btn-cyan:hover{background:rgba(0,229,255,0.2);}
-  .btn-purple{background:rgba(167,139,250,0.1);border-color:var(--accent3);color:var(--accent3);}
-  .btn-purple:hover{background:rgba(167,139,250,0.2);}
-  .btn-green{background:rgba(52,211,153,0.1);border-color:var(--accent4);color:var(--accent4);}
-  .btn-green:hover{background:rgba(52,211,153,0.2);}
-  .btn-full{width:100%;text-align:center;margin-bottom:0.35rem;}
-  .toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;}
-  .toggle-btn{padding:0.5rem;border-radius:6px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.68rem;cursor:pointer;transition:all 0.2s;color:var(--text-dim);background:var(--surface2);text-align:center;}
-  .toggle-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(245,158,11,0.1);}
-  .start-sel{display:flex;flex-wrap:wrap;gap:0.35rem;}
-  .node-chip{font-family:'DM Mono',monospace;font-size:0.7rem;padding:0.25rem 0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;}
-  .node-chip:hover,.node-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(245,158,11,0.1);}
-  .presets{display:flex;flex-wrap:wrap;gap:0.35rem;}
-  .preset-chip{font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;}
-  .preset-chip:hover{border-color:var(--accent);color:var(--accent);}
-  .speed-row{display:flex;align-items:center;gap:0.75rem;}
-  .speed-label{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);white-space:nowrap;}
-  input[type=range]{flex:1;accent-color:var(--accent);}
-  .log{position:fixed;top:100px;right:20px;max-width:300px;z-index:200;pointer-events:none;display:flex;flex-direction:column;gap:0.5rem;}
-  .log-entry{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.75rem;line-height:1.6;color:var(--text-dim);animation:popIn 0.4s ease-out forwards;box-shadow:0 4px 20px rgba(0, 0, 0, 0.4);}
-  @keyframes popIn{0%{opacity:0;transform:translateY(-20px) scale(0.9);}100%{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes popOut{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-20px) scale(0.9);}}
-  .log-entry.fade-out{animation:popOut 0.4s ease-in forwards !important;}
-  .log-entry.success{color:var(--accent4);border-color:var(--accent4);}
-  .log-entry.error{color:#ff6b6b;border-color:#ff6b6b;}
-  .log-entry.info{color:var(--accent2);border-color:var(--accent2);}
-  .log-entry.warn{color:var(--accent);border-color:var(--accent);}
-  .legend{display:flex;flex-direction:column;gap:0.4rem;}
-  .legend-item{display:flex;align-items:center;gap:0.6rem;font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);}
-  .legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-  .canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  .canvas-header{padding:1rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .canvas-title{font-size:0.8rem;font-family:'DM Mono',monospace;color:var(--text-dim);}
-  .stats-row{display:flex;gap:1.5rem;}
-  .stat{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-muted);}
-  .stat span{color:var(--accent);}
-  #graphCanvas{flex:1;width:100%;cursor:pointer;}
-  .info-bar{padding:0.75rem 2rem;border-top:1px solid var(--border);background:var(--surface);}
-  .info-msg{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);}
-  .info-msg .hl{color:var(--accent);}
-  .queue-display{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;min-height:40px;font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-dim);display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;}
-  .q-item{background:var(--surface);border:1px solid var(--accent);border-radius:4px;padding:0.15rem 0.5rem;color:var(--accent);font-size:0.7rem;}
-  .mobile-toggle{display:none;}
-  @media (max-width: 900px) {
-    .layout{flex-direction:column;}
-    .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:70vh;max-height:70vh;border-right:none;border-top:1px solid var(--border);border-radius:12px 12px 0 0;transform:translateY(calc(100% - 50px));transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);z-index:105;box-shadow:0 -2px 20px rgba(0, 0, 0, 0.3);touch-action:none;}
-    .sidebar.active{transform:translateY(0);}
-    .sidebar::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:var(--border);border-radius:3px;cursor:grab;}
-    .sidebar::before:active{cursor:grabbing;}
-    .sidebar-drag-area{position:absolute;top:0;left:0;right:0;height:50px;cursor:grab;z-index:10;}
-    .sidebar-drag-area:active{cursor:grabbing;}
-    #graphCanvas{min-height:400px;}
-  }
-  @media (max-width: 600px) {
-    .sidebar{height:80vh;max-height:80vh;}
-  }
-</style>
-</head>
-<body>
-<nav>
-  <a href="index.html" class="logo">DS/VIZ</a>
-  <span class="page-title">GRAPH TRAVERSALS</span>
-  <a href="index.html" class="nav-back">← Home</a>
-</nav>
-
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Graph Type</div>
-      <div class="toggle-row">
-        <div class="toggle-btn active" id="undirBtn" onclick="setDirected(false)">Undirected</div>
-        <div class="toggle-btn" id="dirBtn" onclick="setDirected(true)">Directed</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Add Edge (A — B)</div>
-      <div class="input-row">
-        <input id="edgeA" class="input-field" type="text" placeholder="Node A" maxlength="2">
-        <input id="edgeB" class="input-field" type="text" placeholder="Node B" maxlength="2">
-        <button class="btn btn-amber" onclick="addEdge()">Add</button>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Start Node</div>
-      <div class="start-sel" id="startSel"></div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Traversal</div>
-      <button class="btn btn-amber btn-full" onclick="animBFS()">▶ BFS — Breadth First</button>
-      <button class="btn btn-cyan btn-full" onclick="animDFS()">▶ DFS — Depth First</button>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Queue / Stack</div>
-      <div class="queue-display" id="queueDisplay"><span style="color:var(--text-muted)">empty</span></div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Presets</div>
-      <div class="presets">
-        <div class="preset-chip" onclick="loadPreset('simple')">Simple 6-node</div>
-        <div class="preset-chip" onclick="loadPreset('grid')">Grid Graph</div>
-        <div class="preset-chip" onclick="loadPreset('tree')">Tree-like</div>
-        <div class="preset-chip" onclick="loadPreset('cycle')">With Cycle</div>
-        <div class="preset-chip" onclick="clearGraph()">🗑 Clear</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Speed</div>
-      <div class="speed-row">
-        <span class="speed-label">Slow</span>
-        <input type="range" id="speedRange" min="1" max="5" value="2">
-        <span class="speed-label">Fast</span>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Log</div>
-      <div class="log" id="log"></div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Legend</div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Current node</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00e5ff"></div>In queue/stack</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>Visited</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Start node</div>
-      </div>
-    </div>
-  </aside>
-
-  <div class="canvas-area">
-    <div class="canvas-header">
-      <span class="canvas-title">// GRAPH VISUALIZATION — Click canvas to drag nodes</span>
-      <div class="stats-row">
-        <div class="stat">Nodes: <span id="statNodes">0</span></div>
-        <div class="stat">Edges: <span id="statEdges">0</span></div>
-        <div class="stat">Visited: <span id="statVisited">0</span></div>
-      </div>
-    </div>
-    <canvas id="graphCanvas"></canvas>
-    <div class="info-bar">
-      <div class="info-msg" id="infoMsg">Click a <span class="hl">preset</span> to load a graph, or add edges manually. Then pick a start node and run BFS/DFS!</div>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── Graph State ───────────────────────────────────────────
-let nodes={}, edges=[], directed=false, animating=false, startNode=null;
-let nodeStates={}, edgeStates={};
-let dragging=null, dragOffX=0, dragOffY=0;
-
-function setDirected(d){
-  if(animating)return;
-  directed=d;
-  document.getElementById('undirBtn').classList.toggle('active',!d);
-  document.getElementById('dirBtn').classList.toggle('active',d);
-  draw();log(`Switched to ${d?'directed':'undirected'} graph`,'info');
-}
-
-function nodeList(){return Object.keys(nodes);}
-
-function addNodeIfNew(name){
-  if(!nodes[name]){
-    const canvas=document.getElementById('graphCanvas');
-    const angle=Math.random()*Math.PI*2;
-    const r=Math.min(canvas.width,canvas.height)*0.3;
-    nodes[name]={x:canvas.width/2+r*Math.cos(angle)*Math.random()+80*Math.random()-40,
-                 y:canvas.height/2+r*Math.sin(angle)*Math.random()+60*Math.random()-30};
-    updateStartSel();
-  }
-}
-
-function addEdge(){
-  const a=(document.getElementById('edgeA').value.trim()||'').toUpperCase();
-  const b=(document.getElementById('edgeB').value.trim()||'').toUpperCase();
-  if(!a||!b||a===b){log('Enter two different node names','error');return;}
-  const exists=edges.some(e=>(e.a===a&&e.b===b)||((!directed)&&e.a===b&&e.b===a));
-  if(exists){log(`Edge ${a}-${b} already exists`,'error');return;}
-  addNodeIfNew(a);addNodeIfNew(b);
-  edges.push({a,b});
-  updateStats();draw();
-  log(`Added edge ${a} — ${b}`,'info');
-  document.getElementById('edgeA').value='';document.getElementById('edgeB').value='';
-}
-
-function getNeighbors(n){
-  return edges.filter(e=>e.a===n||((!directed)&&e.b===n)).map(e=>e.a===n?e.b:e.a)
-    .concat(directed?[]:edges.filter(e=>e.b===n).map(e=>e.a));
-  // Simplify:
-}
-function neighborsOf(n){
-  const res=new Set();
-  for(const e of edges){
-    if(e.a===n)res.add(e.b);
-    if(!directed&&e.b===n)res.add(e.a);
-  }
-  return [...res];
-}
-
-function updateStartSel(){
-  const el=document.getElementById('startSel');el.innerHTML='';
-  for(const n of nodeList()){
-    const chip=document.createElement('div');
-    chip.className='node-chip'+(n===startNode?' active':'');
-    chip.textContent=n;chip.onclick=()=>{startNode=n;updateStartSel();draw();log(`Start node: ${n}`,'info');};
-    el.appendChild(chip);
-  }
-}
-
-function updateStats(){
-  document.getElementById('statNodes').textContent=nodeList().length;
-  document.getElementById('statEdges').textContent=edges.length;
-}
-
-// ── Canvas ────────────────────────────────────────────────
-const canvas=document.getElementById('graphCanvas');
-const ctx=canvas.getContext('2d');
-const NR=26;
-
-function resize(){const a=canvas.parentElement;canvas.width=a.clientWidth;canvas.height=a.clientHeight-100;}
-window.addEventListener('resize',()=>{resize();draw();});
-resize();
-
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(nodeList().length===0){
-    ctx.fillStyle='#1e2d4a44';ctx.font="14px 'DM Mono',monospace";ctx.textAlign='center';
-    ctx.fillText('Load a preset or add edges to build a graph',canvas.width/2,canvas.height/2);
-    return;
-  }
-  // Draw edges
-  for(const e of edges){
-    const na=nodes[e.a],nb=nodes[e.b];if(!na||!nb)continue;
-    const key=e.a+'-'+e.b;
-    const active=edgeStates[key];
-    ctx.save();
-    ctx.strokeStyle=active?active:'#1e2d4a';
-    ctx.lineWidth=active?2.5:1.5;
-    ctx.shadowBlur=active?12:0;ctx.shadowColor=ctx.strokeStyle;
-    ctx.beginPath();ctx.moveTo(na.x,na.y);ctx.lineTo(nb.x,nb.y);ctx.stroke();
-    if(directed){
-      // Arrowhead
-      const dx=nb.x-na.x,dy=nb.y-na.y;
-      const len=Math.sqrt(dx*dx+dy*dy);
-      const ux=dx/len,uy=dy/len;
-      const tip={x:nb.x-ux*NR,y:nb.y-uy*NR};
-      ctx.beginPath();
-      ctx.moveTo(tip.x,tip.y);
-      ctx.lineTo(tip.x-ux*12+uy*7,tip.y-uy*12-ux*7);
-      ctx.lineTo(tip.x-ux*12-uy*7,tip.y-uy*12+ux*7);
-      ctx.closePath();ctx.fillStyle=ctx.strokeStyle;ctx.fill();
-    }
-    ctx.restore();
-  }
-  // Draw nodes
-  for(const n of nodeList()){
-    const pos=nodes[n];
-    const s=nodeStates[n]||{color:'#f59e0b',glowColor:'#f59e0b'};
-    const isStart=n===startNode;
-    ctx.save();ctx.translate(pos.x,pos.y);
-    ctx.shadowBlur=18;ctx.shadowColor=isStart?'#a78bfa':s.glowColor;
-    ctx.beginPath();ctx.arc(0,0,NR,0,Math.PI*2);
-    ctx.fillStyle='#0f1420';ctx.fill();
-    ctx.strokeStyle=n in nodeStates?s.color:(isStart?'#a78bfa':'#334155');
-    ctx.lineWidth=n in nodeStates?2.5:isStart?2.5:1.5;
-    ctx.stroke();
-    if(isStart){ctx.beginPath();ctx.arc(0,0,NR+6,0,Math.PI*2);ctx.strokeStyle='#a78bfa44';ctx.lineWidth=1;ctx.stroke();}
-    ctx.shadowBlur=0;
-    ctx.fillStyle=n in nodeStates?s.color:(isStart?'#a78bfa':'#64748b');
-    ctx.font=`bold 13px 'DM Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(n,0,0);
-    ctx.restore();
-  }
-  updateStats();
-}
-
-// ── Drag ──────────────────────────────────────────────────
-canvas.addEventListener('mousedown',e=>{
-  if(animating)return;
-  const r=canvas.getBoundingClientRect();
-  const mx=e.clientX-r.left,my=e.clientY-r.top;
-  for(const n of nodeList()){
-    const p=nodes[n];
-    if(Math.hypot(mx-p.x,my-p.y)<NR+4){dragging=n;dragOffX=mx-p.x;dragOffY=my-p.y;break;}
-  }
-});
-canvas.addEventListener('mousemove',e=>{
-  if(!dragging)return;
-  const r=canvas.getBoundingClientRect();
-  nodes[dragging].x=e.clientX-r.left-dragOffX;
-  nodes[dragging].y=e.clientY-r.top-dragOffY;
-  draw();
-});
-canvas.addEventListener('mouseup',()=>{dragging=null;});
-
-// ── BFS ───────────────────────────────────────────────────
-function getSpeed(){const v=parseInt(document.getElementById('speedRange').value);return[700,500,350,200,80][v-1];}
-function log(msg,type=''){const el=document.getElementById('log');const d=document.createElement('div');d.className='log-entry '+type;d.textContent='> '+msg;el.appendChild(d);setTimeout(()=>{d.classList.add('fade-out');setTimeout(()=>d.remove(),400);},3500);}
-function setInfo(msg){document.getElementById('infoMsg').innerHTML=msg;}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-function updateQueue(items,label){
-  const el=document.getElementById('queueDisplay');
-  el.innerHTML=`<span style="font-size:0.6rem;color:var(--text-muted)">${label}:</span>`;
-  if(items.length===0){const s=document.createElement('span');s.style.color='var(--text-muted)';s.textContent='empty';el.appendChild(s);}
-  else for(const i of items){const c=document.createElement('span');c.className='q-item';c.textContent=i;el.appendChild(c);}
-}
-
-async function animBFS(){
-  if(animating)return;
-  if(!startNode||!nodes[startNode]){log('Select a start node','error');return;}
-  animating=true;nodeStates={};edgeStates={};draw();
-  log(`BFS from node ${startNode}`,'info');
-  setInfo(`BFS traversal from <span class="hl">${startNode}</span>...`);
-
-  const visited=new Set();
-  const queue=[startNode];
-  visited.add(startNode);
-  nodeStates[startNode]={color:'#00e5ff',glowColor:'#00e5ff'};
-  draw();
-  const order=[];
-
-  while(queue.length>0){
-    updateQueue([...queue],'Queue');
-    const cur=queue.shift();
-    order.push(cur);
-    nodeStates[cur]={color:'#f59e0b',glowColor:'#f59e0b'};
-    draw();await sleep(getSpeed());
-    log(`  Visit: ${cur}`,'warn');
-    document.getElementById('statVisited').textContent=order.length;
-
-    const nbrs=neighborsOf(cur);
-    for(const nb of nbrs){
-      const key=cur+'-'+nb;
-      edgeStates[key]={};edgeStates[nb+'-'+cur]={};
-      if(!visited.has(nb)){
-        visited.add(nb);queue.push(nb);
-        nodeStates[nb]={color:'#00e5ff',glowColor:'#00e5ff'};
-        edgeStates[cur+'-'+nb]='#00e5ff';edgeStates[nb+'-'+cur]='#00e5ff';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph — DSViz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --surface: #0f1420;
+        --surface2: #151c2e;
+        --border: #1e2d4a;
+        --accent: #f59e0b;
+        --accent2: #00e5ff;
+        --accent3: #a78bfa;
+        --accent4: #34d399;
+        --text: #e2e8f0;
+        --text-dim: #64748b;
+        --text-muted: #334155;
       }
-      draw();await sleep(getSpeed()/3);
-    }
-    nodeStates[cur]={color:'#34d399',glowColor:'#34d399'};
-    draw();
-  }
-  updateQueue([],'Queue');
-  log(`✓ BFS Order: [${order.join(' → ')}]`,'success');
-  setInfo(`BFS complete: <span class="hl">[${order.join(' → ')}]</span>`);
-  animating=false;
-}
-
-async function animDFS(){
-  if(animating)return;
-  if(!startNode||!nodes[startNode]){log('Select a start node','error');return;}
-  animating=true;nodeStates={};edgeStates={};draw();
-  log(`DFS from node ${startNode}`,'info');
-  setInfo(`DFS traversal from <span class="hl">${startNode}</span>...`);
-
-  const visited=new Set();
-  const stack=[startNode];
-  const order=[];
-  let visitedCount=0;
-
-  while(stack.length>0){
-    updateQueue([...stack].reverse(),'Stack');
-    const cur=stack.pop();
-    if(visited.has(cur))continue;
-    visited.add(cur);order.push(cur);visitedCount++;
-    nodeStates[cur]={color:'#f59e0b',glowColor:'#f59e0b'};
-    draw();await sleep(getSpeed());
-    log(`  Visit: ${cur}`,'warn');
-    document.getElementById('statVisited').textContent=visitedCount;
-
-    const nbrs=neighborsOf(cur).reverse();
-    for(const nb of nbrs){
-      if(!visited.has(nb)){
-        stack.push(nb);
-        nodeStates[nb]={color:'#a78bfa',glowColor:'#a78bfa'};
-        edgeStates[cur+'-'+nb]='#a78bfa';edgeStates[nb+'-'+cur]='#a78bfa';
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-      draw();await sleep(getSpeed()/4);
-    }
-    nodeStates[cur]={color:'#34d399',glowColor:'#34d399'};
-    draw();
-  }
-  updateQueue([],'Stack');
-  log(`✓ DFS Order: [${order.join(' → ')}]`,'success');
-  setInfo(`DFS complete: <span class="hl">[${order.join(' → ')}]</span>`);
-  animating=false;
-}
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background: rgba(8, 11, 18, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        font-family: "Space Mono", monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .page-title {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        letter-spacing: 2px;
+      }
+      .nav-back {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      .nav-back:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .layout {
+        display: flex;
+        flex: 1;
+        margin-top: 60px;
+        position: relative;
+        z-index: 1;
+      }
+      .sidebar {
+        width: 350px;
+        min-width: 280px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: calc(100vh - 60px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        position: sticky;
+        top: 60px;
+        box-sizing: border-box;
+      }
+      .sidebar > * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .input-field {
+        max-width: 100%;
+      }
+      .sidebar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .sidebar::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      .sidebar::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      .sidebar::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+      .sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .sidebar-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .input-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .input-field {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.6rem 0.8rem;
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 0.82rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .input-field:focus {
+        border-color: var(--accent);
+      }
+      .input-field::placeholder {
+        color: var(--text-muted);
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .btn {
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+        border: 1px solid;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.5px;
+        min-width: 70px;
+      }
+      .btn-amber {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .btn-amber:hover {
+        background: rgba(245, 158, 11, 0.2);
+      }
+      .btn-cyan {
+        background: rgba(0, 229, 255, 0.1);
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-cyan:hover {
+        background: rgba(0, 229, 255, 0.2);
+      }
+      .btn-purple {
+        background: rgba(167, 139, 250, 0.1);
+        border-color: var(--accent3);
+        color: var(--accent3);
+      }
+      .btn-purple:hover {
+        background: rgba(167, 139, 250, 0.2);
+      }
+      .btn-green {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: var(--accent4);
+        color: var(--accent4);
+      }
+      .btn-green:hover {
+        background: rgba(52, 211, 153, 0.2);
+      }
+      .btn-full {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.35rem;
+      }
+      .toggle-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
+      .toggle-btn {
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text-dim);
+        background: var(--surface2);
+        text-align: center;
+      }
+      .toggle-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(245, 158, 11, 0.1);
+      }
+      .start-sel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .node-chip {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+      .node-chip:hover,
+      .node-chip.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(245, 158, 11, 0.1);
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .preset-chip {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+      .preset-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .speed-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .speed-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+      }
+      .log {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        max-width: 300px;
+        z-index: 200;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        display: none;
+      }
+      .log-entry {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: var(--text-dim);
+        animation: popIn 0.4s ease-out forwards;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes popOut {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+      }
+      .log-entry.fade-out {
+        animation: popOut 0.4s ease-in forwards !important;
+      }
+      .log-entry.success {
+        color: var(--accent4);
+        border-color: var(--accent4);
+      }
+      .log-entry.error {
+        color: #ff6b6b;
+        border-color: #ff6b6b;
+      }
+      .log-entry.info {
+        color: var(--accent2);
+        border-color: var(--accent2);
+      }
+      .log-entry.warn {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .legend {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .canvas-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .canvas-header {
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .canvas-title {
+        font-size: 0.8rem;
+        font-family: "DM Mono", monospace;
+        color: var(--text-dim);
+      }
+      .stats-row {
+        display: flex;
+        gap: 1.5rem;
+      }
+      .stat {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+      .stat span {
+        color: var(--accent);
+      }
+      #graphCanvas {
+        flex: 1;
+        width: 100%;
+        cursor: pointer;
+      }
+      .info-bar {
+        padding: 0.75rem 2rem;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .info-msg {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .info-msg .hl {
+        color: var(--accent);
+      }
+      .queue-display {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        min-height: 40px;
+        font-family: "DM Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+      }
+      .q-item {
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        padding: 0.15rem 0.5rem;
+        color: var(--accent);
+        font-size: 0.7rem;
+      }
+      .mobile-toggle {
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          position: fixed;
+          top: 125px;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: auto;
+          max-height: 80vh;
+          border-right: none;
+          border-top: 1px solid var(--border);
+          border-radius: 12px 12px 0 0;
+          transform: translateY(calc(100% - 60px));
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 105;
+          box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+          touch-action: none;
+          overflow-y: auto;
+        }
+        .sidebar.active {
+          transform: translateY(0);
+          z-index: 120;
+        }
+        .sidebar::before {
+          content: "";
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 50px;
+          height: 5px;
+          background: var(--border);
+          border-radius: 3px;
+          cursor: grab;
+          z-index: 15;
+        }
+        .sidebar::before:active {
+          cursor: grabbing;
+        }
+        .log {
+          position: fixed !important;
+          bottom: 70px !important;
+          top: auto !important;
+          right: 10px !important;
+          left: 10px !important;
+          max-width: none !important;
+          max-height: 200px !important;
+          overflow-y: auto !important;
+          z-index: 125 !important;
+          background: var(--surface) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 8px !important;
+          padding: 0.5rem !important;
+        }
+        #graphCanvas {
+          min-height: 400px;
+        }
+      }
+      @media (max-width: 600px) {
+        .sidebar {
+          height: 80vh;
+          max-height: 80vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="index.html" class="logo">DS/VIZ</a>
+      <span class="page-title">GRAPH TRAVERSALS</span>
+      <a href="index.html" class="nav-back">← Home</a>
+    </nav>
 
-// ── Presets ───────────────────────────────────────────────
-function loadPreset(name){
-  if(animating)return;
-  clearGraph();
-  const W=canvas.width,H=canvas.height;
-  const cx=W/2,cy=H/2;
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Graph Type</div>
+          <div class="toggle-row">
+            <div
+              class="toggle-btn active"
+              id="undirBtn"
+              onclick="setDirected(false)"
+            >
+              Undirected
+            </div>
+            <div class="toggle-btn" id="dirBtn" onclick="setDirected(true)">
+              Directed
+            </div>
+          </div>
+        </div>
 
-  if(name==='simple'){
-    const ns=['A','B','C','D','E','F'];
-    const angles=[270,330,30,90,150,210].map(d=>d*Math.PI/180);
-    const r=Math.min(W,H)*0.28;
-    ns.forEach((n,i)=>nodes[n]={x:cx+r*Math.cos(angles[i]),y:cy+r*Math.sin(angles[i])});
-    [['A','B'],['A','C'],['B','D'],['B','E'],['C','F'],['D','E'],['E','F']].forEach(([a,b])=>edges.push({a,b}));
-    startNode='A';
-  } else if(name==='grid'){
-    const ns=[['A','B','C'],['D','E','F'],['G','H','I']];
-    ns.forEach((row,ri)=>row.forEach((n,ci)=>{nodes[n]={x:cx-120+ci*120,y:cy-80+ri*80};}));
-    const e=[['A','B'],['B','C'],['D','E'],['E','F'],['G','H'],['H','I'],['A','D'],['B','E'],['C','F'],['D','G'],['E','H'],['F','I']];
-    e.forEach(([a,b])=>edges.push({a,b}));startNode='A';
-  } else if(name==='tree'){
-    nodes={'A':{x:cx,y:cy-140},'B':{x:cx-140,y:cy-60},'C':{x:cx+140,y:cy-60},'D':{x:cx-200,y:cy+60},'E':{x:cx-80,y:cy+60},'F':{x:cx+80,y:cy+60},'G':{x:cx+200,y:cy+60}};
-    [['A','B'],['A','C'],['B','D'],['B','E'],['C','F'],['C','G']].forEach(([a,b])=>edges.push({a,b}));startNode='A';
-  } else if(name==='cycle'){
-    const ns=['A','B','C','D','E'];
-    const r=Math.min(W,H)*0.25;
-    ns.forEach((n,i)=>{const a=i*Math.PI*2/5-Math.PI/2;nodes[n]={x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};});
-    nodes['F']={x:cx,y:cy};
-    [['A','B'],['B','C'],['C','D'],['D','E'],['E','A'],['F','A'],['F','B'],['F','C'],['F','D'],['F','E']].forEach(([a,b])=>edges.push({a,b}));startNode='A';
-  }
-  updateStartSel();updateStats();draw();
-  log(`Loaded preset: ${name}`,'info');
-  setInfo(`Graph loaded. Select a start node, then run <span class="hl">BFS</span> or <span class="hl">DFS</span>!`);
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Add Edge (A — B)</div>
+          <div class="input-row">
+            <input
+              id="edgeA"
+              class="input-field"
+              type="text"
+              placeholder="Node A"
+              maxlength="2"
+            />
+            <input
+              id="edgeB"
+              class="input-field"
+              type="text"
+              placeholder="Node B"
+              maxlength="2"
+            />
+            <button
+              class="btn btn-amber"
+              onclick="
+                addEdge();
+                closeSidebarMobile();
+              "
+            >
+              Add
+            </button>
+          </div>
+        </div>
 
-function clearGraph(){
-  if(animating)return;
-  nodes={};edges=[];nodeStates={};edgeStates={};startNode=null;
-  document.getElementById('statVisited').textContent=0;
-  updateStartSel();updateStats();draw();
-  document.getElementById('log').innerHTML='';
-  document.getElementById('queueDisplay').innerHTML='<span style="color:var(--text-muted)">empty</span>';
-  setInfo('Graph cleared.');
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Start Node</div>
+          <div class="start-sel" id="startSel"></div>
+        </div>
 
-document.getElementById('edgeA').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('edgeB').focus();});
-document.getElementById('edgeB').addEventListener('keydown',e=>{if(e.key==='Enter')addEdge();});
+        <div class="sidebar-section">
+          <div class="sidebar-label">Traversal</div>
+          <button
+            class="btn btn-amber btn-full"
+            onclick="
+              animBFS();
+              closeSidebarMobile();
+            "
+          >
+            ▶ BFS — Breadth First
+          </button>
+          <button
+            class="btn btn-cyan btn-full"
+            onclick="
+              animDFS();
+              closeSidebarMobile();
+            "
+          >
+            ▶ DFS — Depth First
+          </button>
+        </div>
 
-// Mobile swipe functionality
-const sidebar=document.querySelector('.sidebar');
-if(window.innerWidth<=900){
-  let touchStartY=0,touchStartX=0,isDragging=false;
-  const minSwipeDistance=10,maxVelocityTime=500;
-  let lastTouchTime=0,lastTouchY=0;
-  
-  sidebar.addEventListener('touchstart',(e)=>{
-    touchStartY=e.touches[0].clientY;
-    touchStartX=e.touches[0].clientX;
-    isDragging=true;
-    lastTouchTime=Date.now();
-    lastTouchY=touchStartY;
-    sidebar.style.transition='none';
-  },false);
-  
-  sidebar.addEventListener('touchmove',(e)=>{
-    if(!isDragging)return;
-    const currentY=e.touches[0].clientY;
-    const offset=currentY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const newTransform=Math.max(0,Math.min(maxOffset,offset));
-    sidebar.style.transform=`translateY(calc(100% - 50px + ${newTransform}px))`;
-    lastTouchY=currentY;
-  },false);
-  
-  sidebar.addEventListener('touchend',(e)=>{
-    if(!isDragging)return;
-    isDragging=false;
-    const offset=lastTouchY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const velocity=(lastTouchY-touchStartY)/(Date.now()-lastTouchTime);
-    const threshold=maxOffset*0.3;
-    const isOpen=sidebar.classList.contains('active');
-    sidebar.style.transition='';
-    if(offset<-threshold||velocity<-0.5){sidebar.classList.add('active');}
-    else if(offset>threshold||velocity>0.5){sidebar.classList.remove('active');}
-    else{isOpen?sidebar.classList.add('active'):sidebar.classList.remove('active');}
-  },false);
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Queue / Stack</div>
+          <div class="queue-display" id="queueDisplay">
+            <span style="color: var(--text-muted)">empty</span>
+          </div>
+        </div>
 
-// Auto-collapse menu when buttons are clicked
-document.addEventListener('click',(e)=>{
-  if(window.innerWidth<=900&&sidebar.classList.contains('active')){
-    const isBtn=e.target.closest('button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div');
-    const isSidebarHeader=e.target.closest('.sidebar::before')||e.target.closest('.sidebar-drag-area');
-    if(isBtn&&!isSidebarHeader){sidebar.classList.remove('active');}
-  }
-});
+        <div class="sidebar-section">
+          <div class="sidebar-label">Presets</div>
+          <div class="presets">
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset('simple');
+                closeSidebarMobile();
+              "
+            >
+              Simple 6-node
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset('grid');
+                closeSidebarMobile();
+              "
+            >
+              Grid Graph
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset('tree');
+                closeSidebarMobile();
+              "
+            >
+              Tree-like
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset('cycle');
+                closeSidebarMobile();
+              "
+            >
+              With Cycle
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                clearGraph();
+                closeSidebarMobile();
+              "
+            >
+              🗑 Clear
+            </div>
+          </div>
+        </div>
 
-loadPreset('simple');
-</script>
-</body>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Speed</div>
+          <div class="speed-row">
+            <span class="speed-label">Slow</span>
+            <input type="range" id="speedRange" min="1" max="5" value="2" />
+            <span class="speed-label">Fast</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Log</div>
+          <div class="log" id="log"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Legend</div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #f59e0b"></div>
+              Current node
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #00e5ff"></div>
+              In queue/stack
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #34d399"></div>
+              Visited
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background: #a78bfa"></div>
+              Start node
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="canvas-area">
+        <div class="canvas-header">
+          <span class="canvas-title"
+            >// GRAPH VISUALIZATION — Click canvas to drag nodes</span
+          >
+          <div class="stats-row">
+            <div class="stat">Nodes: <span id="statNodes">0</span></div>
+            <div class="stat">Edges: <span id="statEdges">0</span></div>
+            <div class="stat">Visited: <span id="statVisited">0</span></div>
+          </div>
+        </div>
+        <canvas id="graphCanvas"></canvas>
+        <div class="info-bar">
+          <div class="info-msg" id="infoMsg">
+            Click a <span class="hl">preset</span> to load a graph, or add edges
+            manually. Then pick a start node and run BFS/DFS!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ── Graph State ───────────────────────────────────────────
+      let nodes = {},
+        edges = [],
+        directed = false,
+        animating = false,
+        startNode = null;
+      let nodeStates = {},
+        edgeStates = {};
+      let dragging = null,
+        dragOffX = 0,
+        dragOffY = 0;
+
+      function setDirected(d) {
+        if (animating) return;
+        directed = d;
+        document.getElementById("undirBtn").classList.toggle("active", !d);
+        document.getElementById("dirBtn").classList.toggle("active", d);
+        draw();
+        log(`Switched to ${d ? "directed" : "undirected"} graph`, "info");
+      }
+
+      function nodeList() {
+        return Object.keys(nodes);
+      }
+
+      function addNodeIfNew(name) {
+        if (!nodes[name]) {
+          const canvas = document.getElementById("graphCanvas");
+          const angle = Math.random() * Math.PI * 2;
+          const r = Math.min(canvas.width, canvas.height) * 0.3;
+          nodes[name] = {
+            x:
+              canvas.width / 2 +
+              r * Math.cos(angle) * Math.random() +
+              80 * Math.random() -
+              40,
+            y:
+              canvas.height / 2 +
+              r * Math.sin(angle) * Math.random() +
+              60 * Math.random() -
+              30,
+          };
+          updateStartSel();
+        }
+      }
+
+      function addEdge() {
+        const a = (
+          document.getElementById("edgeA").value.trim() || ""
+        ).toUpperCase();
+        const b = (
+          document.getElementById("edgeB").value.trim() || ""
+        ).toUpperCase();
+        if (!a || !b || a === b) {
+          log("Enter two different node names", "error");
+          return;
+        }
+        const exists = edges.some(
+          (e) =>
+            (e.a === a && e.b === b) || (!directed && e.a === b && e.b === a),
+        );
+        if (exists) {
+          log(`Edge ${a}-${b} already exists`, "error");
+          return;
+        }
+        addNodeIfNew(a);
+        addNodeIfNew(b);
+        edges.push({ a, b });
+        updateStats();
+        draw();
+        log(`Added edge ${a} — ${b}`, "info");
+        document.getElementById("edgeA").value = "";
+        document.getElementById("edgeB").value = "";
+      }
+
+      function getNeighbors(n) {
+        return edges
+          .filter((e) => e.a === n || (!directed && e.b === n))
+          .map((e) => (e.a === n ? e.b : e.a))
+          .concat(
+            directed ? [] : edges.filter((e) => e.b === n).map((e) => e.a),
+          );
+        // Simplify:
+      }
+      function neighborsOf(n) {
+        const res = new Set();
+        for (const e of edges) {
+          if (e.a === n) res.add(e.b);
+          if (!directed && e.b === n) res.add(e.a);
+        }
+        return [...res];
+      }
+
+      function updateStartSel() {
+        const el = document.getElementById("startSel");
+        el.innerHTML = "";
+        for (const n of nodeList()) {
+          const chip = document.createElement("div");
+          chip.className = "node-chip" + (n === startNode ? " active" : "");
+          chip.textContent = n;
+          chip.onclick = () => {
+            startNode = n;
+            updateStartSel();
+            draw();
+            log(`Start node: ${n}`, "info");
+            closeSidebarMobile();
+          };
+          el.appendChild(chip);
+        }
+      }
+
+      function updateStats() {
+        document.getElementById("statNodes").textContent = nodeList().length;
+        document.getElementById("statEdges").textContent = edges.length;
+      }
+
+      // ── Canvas ────────────────────────────────────────────────
+      const canvas = document.getElementById("graphCanvas");
+      const ctx = canvas.getContext("2d");
+      const NR = 26;
+
+      function resize() {
+        const a = canvas.parentElement;
+        canvas.width = a.clientWidth;
+        canvas.height = a.clientHeight - 100;
+      }
+      window.addEventListener("resize", () => {
+        resize();
+        draw();
+      });
+      resize();
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (nodeList().length === 0) {
+          ctx.fillStyle = "#1e2d4a44";
+          ctx.font = "14px 'DM Mono',monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            "Load a preset or add edges to build a graph",
+            canvas.width / 2,
+            canvas.height / 2,
+          );
+          return;
+        }
+        // Draw edges
+        for (const e of edges) {
+          const na = nodes[e.a],
+            nb = nodes[e.b];
+          if (!na || !nb) continue;
+          const key = e.a + "-" + e.b;
+          const active = edgeStates[key];
+          ctx.save();
+          ctx.strokeStyle = active ? active : "#1e2d4a";
+          ctx.lineWidth = active ? 2.5 : 1.5;
+          ctx.shadowBlur = active ? 12 : 0;
+          ctx.shadowColor = ctx.strokeStyle;
+          ctx.beginPath();
+          ctx.moveTo(na.x, na.y);
+          ctx.lineTo(nb.x, nb.y);
+          ctx.stroke();
+          if (directed) {
+            // Arrowhead
+            const dx = nb.x - na.x,
+              dy = nb.y - na.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const ux = dx / len,
+              uy = dy / len;
+            const tip = { x: nb.x - ux * NR, y: nb.y - uy * NR };
+            ctx.beginPath();
+            ctx.moveTo(tip.x, tip.y);
+            ctx.lineTo(tip.x - ux * 12 + uy * 7, tip.y - uy * 12 - ux * 7);
+            ctx.lineTo(tip.x - ux * 12 - uy * 7, tip.y - uy * 12 + ux * 7);
+            ctx.closePath();
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+        // Draw nodes
+        for (const n of nodeList()) {
+          const pos = nodes[n];
+          const s = nodeStates[n] || { color: "#f59e0b", glowColor: "#f59e0b" };
+          const isStart = n === startNode;
+          ctx.save();
+          ctx.translate(pos.x, pos.y);
+          ctx.shadowBlur = 18;
+          ctx.shadowColor = isStart ? "#a78bfa" : s.glowColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, NR, 0, Math.PI * 2);
+          ctx.fillStyle = "#0f1420";
+          ctx.fill();
+          ctx.strokeStyle =
+            n in nodeStates ? s.color : isStart ? "#a78bfa" : "#334155";
+          ctx.lineWidth = n in nodeStates ? 2.5 : isStart ? 2.5 : 1.5;
+          ctx.stroke();
+          if (isStart) {
+            ctx.beginPath();
+            ctx.arc(0, 0, NR + 6, 0, Math.PI * 2);
+            ctx.strokeStyle = "#a78bfa44";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+          ctx.fillStyle =
+            n in nodeStates ? s.color : isStart ? "#a78bfa" : "#64748b";
+          ctx.font = `bold 13px 'DM Mono',monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(n, 0, 0);
+          ctx.restore();
+        }
+        updateStats();
+      }
+
+      // ── Drag ──────────────────────────────────────────────────
+      canvas.addEventListener("mousedown", (e) => {
+        if (animating) return;
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left,
+          my = e.clientY - r.top;
+        for (const n of nodeList()) {
+          const p = nodes[n];
+          if (Math.hypot(mx - p.x, my - p.y) < NR + 4) {
+            dragging = n;
+            dragOffX = mx - p.x;
+            dragOffY = my - p.y;
+            break;
+          }
+        }
+      });
+      canvas.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const r = canvas.getBoundingClientRect();
+        nodes[dragging].x = e.clientX - r.left - dragOffX;
+        nodes[dragging].y = e.clientY - r.top - dragOffY;
+        draw();
+      });
+      canvas.addEventListener("mouseup", () => {
+        dragging = null;
+      });
+
+      // ── BFS ───────────────────────────────────────────────────
+      function getSpeed() {
+        const v = parseInt(document.getElementById("speedRange").value);
+        return [700, 500, 350, 200, 80][v - 1];
+      }
+      function log(msg, type = "") {
+        const el = document.getElementById("log");
+        const d = document.createElement("div");
+        d.className = "log-entry " + type;
+        d.textContent = "> " + msg;
+        el.appendChild(d);
+        el.style.display = el.children.length > 0 ? "block" : "none";
+        setTimeout(() => {
+          d.classList.add("fade-out");
+          setTimeout(() => {
+            d.remove();
+            el.style.display = el.children.length > 0 ? "block" : "none";
+          }, 400);
+        }, 3500);
+      }
+      function setInfo(msg) {
+        document.getElementById("infoMsg").innerHTML = msg;
+      }
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+      function updateQueue(items, label) {
+        const el = document.getElementById("queueDisplay");
+        el.innerHTML = `<span style="font-size:0.6rem;color:var(--text-muted)">${label}:</span>`;
+        if (items.length === 0) {
+          const s = document.createElement("span");
+          s.style.color = "var(--text-muted)";
+          s.textContent = "empty";
+          el.appendChild(s);
+        } else
+          for (const i of items) {
+            const c = document.createElement("span");
+            c.className = "q-item";
+            c.textContent = i;
+            el.appendChild(c);
+          }
+      }
+
+      async function animBFS() {
+        if (animating) return;
+        if (!startNode || !nodes[startNode]) {
+          log("Select a start node", "error");
+          return;
+        }
+        animating = true;
+        nodeStates = {};
+        edgeStates = {};
+        draw();
+        log(`BFS from node ${startNode}`, "info");
+        setInfo(`BFS traversal from <span class="hl">${startNode}</span>...`);
+
+        const visited = new Set();
+        const queue = [startNode];
+        visited.add(startNode);
+        nodeStates[startNode] = { color: "#00e5ff", glowColor: "#00e5ff" };
+        draw();
+        const order = [];
+
+        while (queue.length > 0) {
+          updateQueue([...queue], "Queue");
+          const cur = queue.shift();
+          order.push(cur);
+          nodeStates[cur] = { color: "#f59e0b", glowColor: "#f59e0b" };
+          draw();
+          await sleep(getSpeed());
+          log(`  Visit: ${cur}`, "warn");
+          document.getElementById("statVisited").textContent = order.length;
+
+          const nbrs = neighborsOf(cur);
+          for (const nb of nbrs) {
+            const key = cur + "-" + nb;
+            edgeStates[key] = {};
+            edgeStates[nb + "-" + cur] = {};
+            if (!visited.has(nb)) {
+              visited.add(nb);
+              queue.push(nb);
+              nodeStates[nb] = { color: "#00e5ff", glowColor: "#00e5ff" };
+              edgeStates[cur + "-" + nb] = "#00e5ff";
+              edgeStates[nb + "-" + cur] = "#00e5ff";
+            }
+            draw();
+            await sleep(getSpeed() / 3);
+          }
+          nodeStates[cur] = { color: "#34d399", glowColor: "#34d399" };
+          draw();
+        }
+        updateQueue([], "Queue");
+        log(`✓ BFS Order: [${order.join(" → ")}]`, "success");
+        setInfo(`BFS complete: <span class="hl">[${order.join(" → ")}]</span>`);
+        animating = false;
+      }
+
+      async function animDFS() {
+        if (animating) return;
+        if (!startNode || !nodes[startNode]) {
+          log("Select a start node", "error");
+          return;
+        }
+        animating = true;
+        nodeStates = {};
+        edgeStates = {};
+        draw();
+        log(`DFS from node ${startNode}`, "info");
+        setInfo(`DFS traversal from <span class="hl">${startNode}</span>...`);
+
+        const visited = new Set();
+        const stack = [startNode];
+        const order = [];
+        let visitedCount = 0;
+
+        while (stack.length > 0) {
+          updateQueue([...stack].reverse(), "Stack");
+          const cur = stack.pop();
+          if (visited.has(cur)) continue;
+          visited.add(cur);
+          order.push(cur);
+          visitedCount++;
+          nodeStates[cur] = { color: "#f59e0b", glowColor: "#f59e0b" };
+          draw();
+          await sleep(getSpeed());
+          log(`  Visit: ${cur}`, "warn");
+          document.getElementById("statVisited").textContent = visitedCount;
+
+          const nbrs = neighborsOf(cur).reverse();
+          for (const nb of nbrs) {
+            if (!visited.has(nb)) {
+              stack.push(nb);
+              nodeStates[nb] = { color: "#a78bfa", glowColor: "#a78bfa" };
+              edgeStates[cur + "-" + nb] = "#a78bfa";
+              edgeStates[nb + "-" + cur] = "#a78bfa";
+            }
+            draw();
+            await sleep(getSpeed() / 4);
+          }
+          nodeStates[cur] = { color: "#34d399", glowColor: "#34d399" };
+          draw();
+        }
+        updateQueue([], "Stack");
+        log(`✓ DFS Order: [${order.join(" → ")}]`, "success");
+        setInfo(`DFS complete: <span class="hl">[${order.join(" → ")}]</span>`);
+        animating = false;
+      }
+
+      // ── Presets ───────────────────────────────────────────────
+      function loadPreset(name) {
+        if (animating) return;
+        clearGraph();
+        const W = canvas.width,
+          H = canvas.height;
+        const cx = W / 2,
+          cy = H / 2;
+
+        if (name === "simple") {
+          const ns = ["A", "B", "C", "D", "E", "F"];
+          const angles = [270, 330, 30, 90, 150, 210].map(
+            (d) => (d * Math.PI) / 180,
+          );
+          const r = Math.min(W, H) * 0.28;
+          ns.forEach(
+            (n, i) =>
+              (nodes[n] = {
+                x: cx + r * Math.cos(angles[i]),
+                y: cy + r * Math.sin(angles[i]),
+              }),
+          );
+          [
+            ["A", "B"],
+            ["A", "C"],
+            ["B", "D"],
+            ["B", "E"],
+            ["C", "F"],
+            ["D", "E"],
+            ["E", "F"],
+          ].forEach(([a, b]) => edges.push({ a, b }));
+          startNode = "A";
+        } else if (name === "grid") {
+          const ns = [
+            ["A", "B", "C"],
+            ["D", "E", "F"],
+            ["G", "H", "I"],
+          ];
+          ns.forEach((row, ri) =>
+            row.forEach((n, ci) => {
+              nodes[n] = { x: cx - 120 + ci * 120, y: cy - 80 + ri * 80 };
+            }),
+          );
+          const e = [
+            ["A", "B"],
+            ["B", "C"],
+            ["D", "E"],
+            ["E", "F"],
+            ["G", "H"],
+            ["H", "I"],
+            ["A", "D"],
+            ["B", "E"],
+            ["C", "F"],
+            ["D", "G"],
+            ["E", "H"],
+            ["F", "I"],
+          ];
+          e.forEach(([a, b]) => edges.push({ a, b }));
+          startNode = "A";
+        } else if (name === "tree") {
+          nodes = {
+            A: { x: cx, y: cy - 140 },
+            B: { x: cx - 140, y: cy - 60 },
+            C: { x: cx + 140, y: cy - 60 },
+            D: { x: cx - 200, y: cy + 60 },
+            E: { x: cx - 80, y: cy + 60 },
+            F: { x: cx + 80, y: cy + 60 },
+            G: { x: cx + 200, y: cy + 60 },
+          };
+          [
+            ["A", "B"],
+            ["A", "C"],
+            ["B", "D"],
+            ["B", "E"],
+            ["C", "F"],
+            ["C", "G"],
+          ].forEach(([a, b]) => edges.push({ a, b }));
+          startNode = "A";
+        } else if (name === "cycle") {
+          const ns = ["A", "B", "C", "D", "E"];
+          const r = Math.min(W, H) * 0.25;
+          ns.forEach((n, i) => {
+            const a = (i * Math.PI * 2) / 5 - Math.PI / 2;
+            nodes[n] = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+          });
+          nodes["F"] = { x: cx, y: cy };
+          [
+            ["A", "B"],
+            ["B", "C"],
+            ["C", "D"],
+            ["D", "E"],
+            ["E", "A"],
+            ["F", "A"],
+            ["F", "B"],
+            ["F", "C"],
+            ["F", "D"],
+            ["F", "E"],
+          ].forEach(([a, b]) => edges.push({ a, b }));
+          startNode = "A";
+        }
+        updateStartSel();
+        updateStats();
+        draw();
+        log(`Loaded preset: ${name}`, "info");
+        setInfo(
+          `Graph loaded. Select a start node, then run <span class="hl">BFS</span> or <span class="hl">DFS</span>!`,
+        );
+      }
+
+      function clearGraph() {
+        if (animating) return;
+        nodes = {};
+        edges = [];
+        nodeStates = {};
+        edgeStates = {};
+        startNode = null;
+        document.getElementById("statVisited").textContent = 0;
+        updateStartSel();
+        updateStats();
+        draw();
+        document.getElementById("log").innerHTML = "";
+        document.getElementById("queueDisplay").innerHTML =
+          '<span style="color:var(--text-muted)">empty</span>';
+        setInfo("Graph cleared.");
+      }
+
+      document.getElementById("edgeA").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("edgeB").focus();
+      });
+      document.getElementById("edgeB").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") addEdge();
+      });
+
+      // Mobile swipe functionality
+      const sidebar = document.querySelector(".sidebar");
+      if (window.innerWidth <= 900) {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        sidebar.addEventListener("touchstart", (e) => {
+          startY = e.touches[0].clientY;
+          isDragging = true;
+          sidebar.style.transition = "none";
+        });
+
+        sidebar.addEventListener("touchmove", (e) => {
+          if (!isDragging) return;
+
+          currentY = e.touches[0].clientY;
+          let delta = currentY - startY;
+
+          if (sidebar.classList.contains("active")) {
+            // dragging down
+            if (delta > 0) {
+              sidebar.style.transform = `translateY(${delta}px)`;
+            }
+          } else {
+            // dragging up
+            if (delta < 0) {
+              const collapsedOffset = sidebar.offsetHeight - 60;
+              sidebar.style.transform = `translateY(${collapsedOffset + delta}px)`;
+            }
+          }
+        });
+
+        function closeSidebarMobile() {
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove("active");
+          }
+        }
+        sidebar.addEventListener("touchend", () => {
+          isDragging = false;
+          sidebar.style.transition = "transform 0.3s ease";
+
+          let delta = currentY - startY;
+
+          if (delta < -50) {
+            // swipe up → open
+            sidebar.classList.add("active");
+          } else if (delta > 50) {
+            // swipe down → close
+            sidebar.classList.remove("active");
+          } else {
+            // snap back
+            if (sidebar.classList.contains("active")) {
+              sidebar.classList.add("active");
+            } else {
+              sidebar.classList.remove("active");
+            }
+          }
+
+          sidebar.style.transform = "";
+        });
+      }
+
+      // Auto-collapse menu when buttons are clicked
+      document.addEventListener("click", (e) => {
+        if (window.innerWidth <= 900 && sidebar.classList.contains("active")) {
+          const isBtn = e.target.closest(
+            "button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div",
+          );
+          const isSidebarHeader = e.target.closest(".sidebar::before");
+          if (isBtn && !isSidebarHeader) {
+            sidebar.classList.remove("active");
+          }
+        }
+      });
+
+      function closeSidebarMobile() {
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove("active");
+        }
+      }
+
+      loadPreset("simple");
+    </script>
+  </body>
 </html>

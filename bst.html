@@ -120,8 +120,9 @@
         overflow-x: hidden;
         overflow-y: auto;
         position: sticky;
-        top: 60px;
+        top: 125px;
         box-sizing: border-box;
+        will-change: transform;
       }
       .sidebar::-webkit-scrollbar {
         width: 8px;
@@ -281,7 +282,7 @@
 
       /* Log */
       .log {
-        position: fixed;
+        position: absolute;
         top: 100px;
         right: 20px;
         max-width: 300px;
@@ -290,6 +291,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        display: none; /* Hidden by default */
       }
       .log-entry {
         background: var(--surface);
@@ -304,12 +306,24 @@
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
       }
       @keyframes popIn {
-        0% { opacity: 0; transform: translateY(-20px) scale(0.9); }
-        100% { opacity: 1; transform: translateY(0) scale(1); }
+        0% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
       }
       @keyframes popOut {
-        0% { opacity: 1; transform: translateY(0) scale(1); }
-        100% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
       }
       .log-entry.fade-out {
         animation: popOut 0.4s ease-in forwards !important;
@@ -463,22 +477,24 @@
           left: 0;
           right: 0;
           width: 100%;
-          height: 70vh;
-          max-height: 70vh;
+          height: auto;
+          max-height: 80vh;
           border-right: none;
           border-top: 1px solid var(--border);
           border-radius: 12px 12px 0 0;
-          transform: translateY(calc(100% - 50px));
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           z-index: 105;
           box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
           touch-action: none;
+          overflow-y: auto;
+          transform: translateY(calc(100% - 60px));
         }
         .sidebar.active {
           transform: translateY(0);
+          z-index: 120;
         }
         .sidebar::before {
-          content: '';
+          content: "";
           position: absolute;
           top: 8px;
           left: 50%;
@@ -488,22 +504,26 @@
           background: var(--border);
           border-radius: 3px;
           cursor: grab;
+          z-index: 15;
         }
         .sidebar::before:active {
           cursor: grabbing;
         }
-        .sidebar-drag-area {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 50px;
-          cursor: grab;
-          z-index: 10;
+        .log {
+          position: fixed !important;
+          top: 10px !important;
+          right: 10px !important;
+          left: 10px !important;
+          max-width: none !important;
+          max-height: 200px !important;
+          overflow-y: auto !important;
+          z-index: 1250 !important;
+          background: var(--surface) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 8px !important;
+          padding: 0.5rem !important;
         }
-        .sidebar-drag-area:active {
-          cursor: grabbing;
-        }
+        
         #treeCanvas {
           min-height: 400px;
         }
@@ -537,7 +557,13 @@
               min="1"
               max="99"
             />
-            <button class="btn btn-primary" onclick="animInsert()">
+            <button
+              class="btn btn-primary"
+              onclick="
+                animInsert();
+                closeSidebarMobile();
+              "
+            >
               Insert
             </button>
           </div>
@@ -553,7 +579,15 @@
               type="number"
               placeholder="Value to find"
             />
-            <button class="btn btn-green" onclick="animSearch()">Find</button>
+            <button
+              class="btn btn-green"
+              onclick="
+                animSearch();
+                closeSidebarMobile();
+              "
+            >
+              Find
+            </button>
           </div>
         </div>
 
@@ -567,7 +601,13 @@
               type="number"
               placeholder="Value to delete"
             />
-            <button class="btn btn-danger" onclick="animDelete()">
+            <button
+              class="btn btn-danger"
+              onclick="
+                animDelete();
+                closeSidebarMobile();
+              "
+            >
               Delete
             </button>
           </div>
@@ -579,25 +619,37 @@
           <div class="trav-btns">
             <button
               class="btn btn-purple btn-full"
-              onclick="animTraversal('inorder')"
+              onclick="
+                animTraversal('inorder');
+                closeSidebarMobile();
+              "
             >
               ▶ Inorder (L → Root → R)
             </button>
             <button
               class="btn btn-purple btn-full"
-              onclick="animTraversal('preorder')"
+              onclick="
+                animTraversal('preorder');
+                closeSidebarMobile();
+              "
             >
               ▶ Preorder (Root → L → R)
             </button>
             <button
               class="btn btn-purple btn-full"
-              onclick="animTraversal('postorder')"
+              onclick="
+                animTraversal('postorder');
+                closeSidebarMobile();
+              "
             >
               ▶ Postorder (L → R → Root)
             </button>
             <button
               class="btn btn-purple btn-full"
-              onclick="animTraversal('levelorder')"
+              onclick="
+                animTraversal('levelorder');
+                closeSidebarMobile();
+              "
             >
               ▶ Level Order (BFS)
             </button>
@@ -610,16 +662,28 @@
           <div class="presets">
             <div
               class="preset-chip"
-              onclick="loadPreset([50, 30, 70, 20, 40, 60, 80])"
+              onclick="
+                loadPreset([50, 30, 70, 20, 40, 60, 80]);
+                closeSidebarMobile();
+              "
             >
               Balanced
             </div>
-            <div class="preset-chip" onclick="loadPreset([10, 20, 30, 40, 50])">
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([10, 20, 30, 40, 50]);
+                closeSidebarMobile();
+              "
+            >
               Right Skewed
             </div>
             <div
               class="preset-chip"
-              onclick="loadPreset([50, 25, 75, 12, 37, 62, 87, 6, 18])"
+              onclick="
+                loadPreset([50, 25, 75, 12, 37, 62, 87, 6, 18]);
+                closeSidebarMobile();
+              "
             >
               Full Tree
             </div>
@@ -895,10 +959,16 @@
         div.className = "log-entry " + type;
         div.textContent = "> " + msg;
         el.appendChild(div);
+        el.style.display = "block"; // Show log when adding entry
         setTimeout(() => {
           div.classList.add("fade-out");
-          setTimeout(() => div.remove(), 400);
-        }, 3500);
+          setTimeout(() => {
+            div.remove();
+            if (el.children.length === 0) {
+              el.style.display = "none"; // Hide log when empty
+            }
+          }, 200);
+        }, 1500);
       }
 
       function setInfo(msg) {
@@ -1207,60 +1277,68 @@
       loadPreset([50, 30, 70, 20, 40, 60, 80]);
 
       // Mobile swipe functionality
-      const sidebar = document.querySelector('.sidebar');
+      const sidebar = document.querySelector(".sidebar");
       if (window.innerWidth <= 900) {
-        let touchStartY = 0, touchStartX = 0, isDragging = false;
-        const minSwipeDistance = 10, maxVelocityTime = 500;
-        let lastTouchTime = 0, lastTouchY = 0;
-        
-        sidebar.addEventListener('touchstart', (e) => {
-          touchStartY = e.touches[0].clientY;
-          touchStartX = e.touches[0].clientX;
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        sidebar.addEventListener("touchstart", (e) => {
+          startY = e.touches[0].clientY;
           isDragging = true;
-          lastTouchTime = Date.now();
-          lastTouchY = touchStartY;
-          sidebar.style.transition = 'none';
-        }, false);
-        
-        sidebar.addEventListener('touchmove', (e) => {
+          sidebar.style.transition = "none";
+        });
+
+        sidebar.addEventListener("touchmove", (e) => {
           if (!isDragging) return;
-          const currentY = e.touches[0].clientY;
-          const offset = currentY - touchStartY;
-          const maxOffset = sidebar.offsetHeight - 50;
-          const newTransform = Math.max(0, Math.min(maxOffset, offset));
-          sidebar.style.transform = `translateY(calc(100% - 50px + ${newTransform}px))`;
-          lastTouchY = currentY;
-        }, false);
-        
-        sidebar.addEventListener('touchend', (e) => {
-          if (!isDragging) return;
-          isDragging = false;
-          const offset = lastTouchY - touchStartY;
-          const maxOffset = sidebar.offsetHeight - 50;
-          const velocity = (lastTouchY - touchStartY) / (Date.now() - lastTouchTime);
-          const threshold = maxOffset * 0.3;
-          const isOpen = sidebar.classList.contains('active');
-          sidebar.style.transition = '';
-          if (offset < -threshold || velocity < -0.5) {
-            sidebar.classList.add('active');
-          } else if (offset > threshold || velocity > 0.5) {
-            sidebar.classList.remove('active');
+
+          currentY = e.touches[0].clientY;
+          let delta = currentY - startY;
+
+          if (sidebar.classList.contains("active")) {
+            // dragging down
+            if (delta > 0) {
+              sidebar.style.transform = `translateY(${delta}px)`;
+            }
           } else {
-            isOpen ? sidebar.classList.add('active') : sidebar.classList.remove('active');
+            // dragging up
+            if (delta < 0) {
+              const collapsedOffset = sidebar.offsetHeight - 60;
+              sidebar.style.transform = `translateY(${collapsedOffset + delta}px)`;
+            }
           }
-        }, false);
-      }
-      
-      // Auto-collapse menu when buttons are clicked
-      document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 900 && sidebar.classList.contains('active')) {
-          const isBtn = e.target.closest('button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div');
-          const isSidebarHeader = e.target.closest('.sidebar::before') || e.target.closest('.sidebar-drag-area');
-          if (isBtn && !isSidebarHeader) {
-            sidebar.classList.remove('active');
+        });
+  
+
+        function closeSidebarMobile() {
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove("active");
           }
         }
-      });
+        sidebar.addEventListener("touchend", () => {
+          isDragging = false;
+          sidebar.style.transition = "transform 0.3s ease";
+
+          let delta = currentY - startY;
+
+          if (delta < -50) {
+            // swipe up → open
+            sidebar.classList.add("active");
+          } else if (delta > 50) {
+            // swipe down → close
+            sidebar.classList.remove("active");
+          } else {
+            // snap back
+            if (sidebar.classList.contains("active")) {
+              sidebar.classList.add("active");
+            } else {
+              sidebar.classList.remove("active");
+            }
+          }
+
+          sidebar.style.transform = "";
+        });
+      }
     </script>
   </body>
 </html>

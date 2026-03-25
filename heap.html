@@ -1,492 +1,1219 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heap — DSViz</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root{--bg:#080b12;--surface:#0f1420;--surface2:#151c2e;--border:#1e2d4a;--accent:#ff6b6b;--accent2:#f59e0b;--accent3:#34d399;--accent4:#a78bfa;--text:#e2e8f0;--text-dim:#64748b;--text-muted:#334155;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
-  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,107,107,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,107,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;background:rgba(8,11,18,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
-  .logo{font-family:'Space Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--accent);text-decoration:none;}
-  .page-title{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);letter-spacing:2px;}
-  .nav-back{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);text-decoration:none;border:1px solid var(--border);padding:0.3rem 0.8rem;border-radius:4px;transition:all 0.2s;}
-  .nav-back:hover{color:var(--accent);border-color:var(--accent);}
-  .layout{display:flex;flex:1;margin-top:60px;position:relative;z-index:1;}
-  .sidebar{width:350px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;height:calc(100vh - 60px);overflow-x:hidden;overflow-y:auto;position:sticky;top:60px;box-sizing:border-box;}
-.sidebar>*{max-width:100%;box-sizing:border-box;}
-.input-field{max-width:100%;}
-.sidebar::-webkit-scrollbar {
-  width: 8px;
-}
-.sidebar::-webkit-scrollbar-track {
-  background: var(--surface2);
-}
-.sidebar::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-  .sidebar-section{display:flex;flex-direction:column;gap:0.75rem;}
-  .sidebar-label{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
-  .input-row{display:flex;gap:0.5rem;}
-  .input-field{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.6rem 0.8rem;color:var(--text);font-family:'DM Mono',monospace;font-size:0.85rem;outline:none;transition:border-color 0.2s;}
-  .input-field:focus{border-color:var(--accent);}
-  .input-field::placeholder{color:var(--text-muted);}
-  input[type="number"]::-webkit-outer-spin-button,
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  .btn{padding:0.6rem 1rem;border-radius:6px;border:1px solid;font-family:'DM Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;min-width:70px;}
-  .btn-red{background:rgba(255,107,107,0.1);border-color:var(--accent);color:var(--accent);}
-  .btn-red:hover{background:rgba(255,107,107,0.2);}
-  .btn-amber{background:rgba(245,158,11,0.1);border-color:var(--accent2);color:var(--accent2);}
-  .btn-amber:hover{background:rgba(245,158,11,0.2);}
-  .btn-green{background:rgba(52,211,153,0.1);border-color:var(--accent3);color:var(--accent3);}
-  .btn-green:hover{background:rgba(52,211,153,0.2);}
-  .btn-purple{background:rgba(167,139,250,0.1);border-color:var(--accent4);color:var(--accent4);}
-  .btn-purple:hover{background:rgba(167,139,250,0.2);}
-  .btn-full{width:100%;text-align:center;}
-  .toggle-row{display:flex;gap:0.5rem;}
-  .toggle-btn{flex:1;padding:0.5rem;border-radius:6px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:0.72rem;cursor:pointer;transition:all 0.2s;color:var(--text-dim);background:var(--surface2);}
-  .toggle-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(255,107,107,0.1);}
-  .heap-array{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0.75rem;display:flex;flex-wrap:wrap;gap:0.4rem;min-height:50px;}
-  .arr-cell{width:34px;height:34px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);position:relative;transition:all 0.3s;}
-  .arr-cell.active{border-color:var(--accent);color:var(--accent);box-shadow:0 0 8px rgba(255,107,107,0.3);}
-  .arr-idx{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:0.55rem;color:var(--text-muted);}
-  .speed-row{display:flex;align-items:center;gap:0.75rem;}
-  .speed-label{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-dim);white-space:nowrap;}
-  input[type=range]{flex:1;accent-color:var(--accent);}
-  .log{position:fixed;top:100px;right:20px;max-width:300px;z-index:200;pointer-events:none;display:flex;flex-direction:column;gap:0.5rem;}
-  .log-entry{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;font-family:'DM Mono',monospace;font-size:0.75rem;line-height:1.6;color:var(--text-dim);animation:popIn 0.4s ease-out forwards;box-shadow:0 4px 20px rgba(0, 0, 0, 0.4);}
-  @keyframes popIn{0%{opacity:0;transform:translateY(-20px) scale(0.9);}100%{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes popOut{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-20px) scale(0.9);}}
-  .log-entry.fade-out{animation:popOut 0.4s ease-in forwards !important;}
-  .log-entry.success{color:var(--accent3);border-color:var(--accent3);}
-  .log-entry.error{color:var(--accent);border-color:var(--accent);}
-  .log-entry.info{color:#00e5ff;border-color:#00e5ff;}
-  .log-entry.warn{color:var(--accent2);border-color:var(--accent2);}
-  .presets{display:flex;flex-wrap:wrap;gap:0.35rem;}
-  .preset-chip{font-family:'DM Mono',monospace;font-size:0.65rem;padding:0.25rem 0.6rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-dim);transition:all 0.2s;}
-  .preset-chip:hover{border-color:var(--accent);color:var(--accent);}
-  .canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-  .canvas-header{padding:1rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .canvas-title{font-size:0.8rem;font-family:'DM Mono',monospace;color:var(--text-dim);}
-  .stats-row{display:flex;gap:1.5rem;}
-  .stat{font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-muted);}
-  .stat span{color:var(--accent);}
-  #heapCanvas{flex:1;width:100%;}
-  .info-bar{padding:0.75rem 2rem;border-top:1px solid var(--border);background:var(--surface);display:flex;align-items:center;}
-  .info-msg{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim);}
-  .info-msg .hl{color:var(--accent);}
-  .mobile-toggle{display:none;}
-  @media (max-width: 900px) {
-    .layout{flex-direction:column;}
-    .sidebar{position:fixed;bottom:0;left:0;right:0;width:100%;height:70vh;max-height:70vh;border-right:none;border-top:1px solid var(--border);border-radius:12px 12px 0 0;transform:translateY(calc(100% - 50px));transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);z-index:105;box-shadow:0 -2px 20px rgba(0, 0, 0, 0.3);touch-action:none;}
-    .sidebar.active{transform:translateY(0);}
-    .sidebar::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:50px;height:5px;background:var(--border);border-radius:3px;cursor:grab;}
-    .sidebar::before:active{cursor:grabbing;}
-    .sidebar-drag-area{position:absolute;top:0;left:0;right:0;height:50px;cursor:grab;z-index:10;}
-    .sidebar-drag-area:active{cursor:grabbing;}
-    #heapCanvas{min-height:400px;}
-  }
-  @media (max-width: 600px) {
-    .sidebar{height:80vh;max-height:80vh;}
-  }
-</style>
-</head>
-<body>
-<nav>
-  <a href="index.html" class="logo">DS/VIZ</a>
-  <span class="page-title">HEAP / PRIORITY QUEUE</span>
-  <a href="index.html" class="nav-back">← Home</a>
-</nav>
-
-<div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Heap Type</div>
-      <div class="toggle-row">
-        <button class="toggle-btn active" id="maxBtn" onclick="setHeapType('max')">Max-Heap</button>
-        <button class="toggle-btn" id="minBtn" onclick="setHeapType('min')">Min-Heap</button>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Insert</div>
-      <div class="input-row">
-        <input id="insertVal" class="input-field" type="number" placeholder="Value (1–99)">
-        <button class="btn btn-red" onclick="animInsert()">Push</button>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Extract</div>
-      <button class="btn btn-amber btn-full" onclick="animExtract()">🔺 Extract Root (Max/Min)</button>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Build Heap</div>
-      <button class="btn btn-green btn-full" onclick="animHeapSort()">▶ Heap Sort Animation</button>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Quick Load</div>
-      <div class="presets">
-        <div class="preset-chip" onclick="loadPreset([41,39,33,18,27,21,14,12,11])">Classic Max</div>
-        <div class="preset-chip" onclick="loadPreset([5,10,15,20,25,30])">Sequential</div>
-        <div class="preset-chip" onclick="loadPreset([99,80,70,60,50,40,30,20,10])">Desc Order</div>
-        <div class="preset-chip" onclick="clearHeap()">🗑 Clear</div>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Heap Array</div>
-      <div class="heap-array" id="heapArray"></div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Speed</div>
-      <div class="speed-row">
-        <span class="speed-label">Slow</span>
-        <input type="range" id="speedRange" min="1" max="5" value="3">
-        <span class="speed-label">Fast</span>
-      </div>
-    </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-label">Log</div>
-      <div class="log" id="log"></div>
-    </div>
-  </aside>
-
-  <div class="canvas-area">
-    <div class="canvas-header">
-      <span class="canvas-title" id="heapTypeLabel">// MAX-HEAP VISUALIZATION</span>
-      <div class="stats-row">
-        <div class="stat">Size: <span id="statSize">0</span></div>
-        <div class="stat">Root: <span id="statRoot">—</span></div>
-        <div class="stat">Comparisons: <span id="statComp">0</span></div>
-      </div>
-    </div>
-    <canvas id="heapCanvas"></canvas>
-    <div class="info-bar">
-      <div class="info-msg" id="infoMsg">Max-Heap: root is always the <span class="hl">largest</span> element. Try Extract Root to see heapify-down!</div>
-    </div>
-  </div>
-</div>
-
-<script>
-let heap=[], heapType='max', animating=false, comparisons=0;
-let animState={};
-
-function cmp(a,b){return heapType==='max'?a>b:a<b;}
-
-function setHeapType(t){
-  if(animating)return;
-  heapType=t;
-  document.getElementById('maxBtn').classList.toggle('active',t==='max');
-  document.getElementById('minBtn').classList.toggle('active',t==='min');
-  document.getElementById('heapTypeLabel').textContent=`// ${t.toUpperCase()}-HEAP VISUALIZATION`;
-  document.getElementById('infoMsg').innerHTML=t==='max'?
-    `Max-Heap: root is always the <span class="hl">largest</span> element.`:
-    `Min-Heap: root is always the <span class="hl">smallest</span> element.`;
-  // Rebuild
-  const old=[...heap];clearHeap();for(let v of old)heap.push(v);
-  for(let i=Math.floor(heap.length/2)-1;i>=0;i--)heapifyDown(i);
-  drawAll();
-  log(`Switched to ${t}-heap`,'info');
-}
-
-function heapifyUp(i){
-  while(i>0){
-    const p=Math.floor((i-1)/2);
-    comparisons++;
-    if(cmp(heap[i],heap[p])){[heap[i],heap[p]]=[heap[p],heap[i]];i=p;}
-    else break;
-  }
-}
-function heapifyDown(i){
-  const n=heap.length;
-  while(true){
-    let best=i,l=2*i+1,r=2*i+2;
-    comparisons++;
-    if(l<n&&cmp(heap[l],heap[best]))best=l;
-    if(r<n&&cmp(heap[r],heap[best]))best=r;
-    if(best!==i){[heap[i],heap[best]]=[heap[best],heap[i]];i=best;}
-    else break;
-  }
-}
-
-// ── Canvas ────────────────────────────────────────────────
-const canvas=document.getElementById('heapCanvas');
-const ctx=canvas.getContext('2d');
-const NR=26;
-
-function resize(){const a=canvas.parentElement;canvas.width=a.clientWidth;canvas.height=a.clientHeight-100;}
-window.addEventListener('resize',()=>{resize();drawAll();});
-resize();
-
-function nodePos(i){
-  const n=heap.length;
-  const depth=Math.floor(Math.log2(i+1));
-  const levelStart=Math.pow(2,depth)-1;
-  const levelCount=Math.min(Math.pow(2,depth),n-levelStart);
-  const posInLevel=i-levelStart;
-  const W=canvas.width,H=canvas.height;
-  const x=W*(posInLevel+0.5)/levelCount;
-  const y=60+depth*80;
-  return{x,y};
-}
-
-function getS(i){return animState[i]||{color:'#ff6b6b',glowColor:'#ff6b6b',scale:1,opacity:1};}
-
-function drawAll(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(heap.length===0){
-    ctx.fillStyle='#1e2d4a44';ctx.font="14px 'DM Mono',monospace";ctx.textAlign='center';
-    ctx.fillText('Empty heap — insert values or load a preset',canvas.width/2,canvas.height/2);
-    updateStats();updateArrayDisplay();return;
-  }
-  // Draw edges
-  for(let i=1;i<heap.length;i++){
-    const p=Math.floor((i-1)/2);
-    const pp=nodePos(p),cp=nodePos(i);
-    const si=getS(i),sp=getS(p);
-    ctx.save();ctx.globalAlpha=Math.min(si.opacity,sp.opacity);
-    ctx.strokeStyle=i in animState?animState[i].glowColor:'#1e2d4a';
-    ctx.lineWidth=1.5;ctx.shadowBlur=i in animState?8:0;ctx.shadowColor=ctx.strokeStyle;
-    ctx.beginPath();ctx.moveTo(pp.x,pp.y);ctx.lineTo(cp.x,cp.y);ctx.stroke();ctx.restore();
-  }
-  // Draw nodes
-  for(let i=0;i<heap.length;i++){
-    const {x,y}=nodePos(i);
-    const s=getS(i);
-    const r=NR*s.scale;
-    ctx.save();ctx.globalAlpha=s.opacity;ctx.translate(x,y);
-    ctx.shadowBlur=20;ctx.shadowColor=s.glowColor;
-    ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);
-    ctx.fillStyle='#0f1420';ctx.fill();
-    ctx.strokeStyle=s.color;ctx.lineWidth=i===0?3:2;ctx.stroke();
-    if(i===0){ctx.beginPath();ctx.arc(0,0,r+6,0,Math.PI*2);ctx.strokeStyle=s.color+'44';ctx.lineWidth=1;ctx.stroke();}
-    ctx.shadowBlur=0;ctx.fillStyle=s.color;
-    ctx.font=`bold 13px 'DM Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(heap[i],0,0);
-    ctx.fillStyle=s.color+'66';ctx.font="9px 'DM Mono',monospace";
-    ctx.fillText(`[${i}]`,0,r+12);
-    ctx.restore();
-  }
-  updateStats();updateArrayDisplay();
-}
-
-function updateStats(){
-  document.getElementById('statSize').textContent=heap.length;
-  document.getElementById('statRoot').textContent=heap.length?heap[0]:'—';
-  document.getElementById('statComp').textContent=comparisons;
-}
-
-function updateArrayDisplay(){
-  const el=document.getElementById('heapArray');
-  el.innerHTML='';
-  heap.forEach((v,i)=>{
-    const cell=document.createElement('div');
-    cell.className='arr-cell'+(i in animState?' active':'');
-    cell.innerHTML=`${v}<span class="arr-idx">${i}</span>`;
-    el.appendChild(cell);
-  });
-}
-
-// ── Helpers ───────────────────────────────────────────────
-function getSpeed(){const v=parseInt(document.getElementById('speedRange').value);return[600,450,300,180,80][v-1];}
-function log(msg,type=''){const el=document.getElementById('log');const d=document.createElement('div');d.className='log-entry '+type;d.textContent='> '+msg;el.appendChild(d);setTimeout(()=>{d.classList.add('fade-out');setTimeout(()=>d.remove(),400);},3500);}
-function setInfo(msg){document.getElementById('infoMsg').innerHTML=msg;}
-function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
-
-async function animInsert(){
-  if(animating)return;
-  const val=parseInt(document.getElementById('insertVal').value);
-  if(isNaN(val)||val<1||val>999){log('Enter valid value','error');return;}
-  animating=true;
-  heap.push(val);
-  let i=heap.length-1;
-  animState[i]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1.4,opacity:0};
-  drawAll();
-  for(let j=0;j<=10;j++){animState[i]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1.4-0.04*j,opacity:j/10};drawAll();await sleep(20);}
-  log(`Inserted ${val} at index ${i}`,'info');
-  setInfo(`Bubbling <span class="hl">${val}</span> up to maintain heap property...`);
-  // Animated heapify-up
-  while(i>0){
-    const p=Math.floor((i-1)/2);
-    comparisons++;
-    animState[i]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.15,opacity:1};
-    animState[p]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.15,opacity:1};
-    drawAll();await sleep(getSpeed());
-    if(cmp(heap[i],heap[p])){
-      [heap[i],heap[p]]=[heap[p],heap[i]];
-      log(`  Swap ${heap[p]} ↑ with parent ${heap[i]}`,'warn');
-      delete animState[i];delete animState[p];
-      i=p;
-    } else {
-      log(`  ${val} in correct position`,'success');
-      delete animState[i];delete animState[p];
-      break;
-    }
-    drawAll();
-  }
-  animState[i]={color:'#34d399',glowColor:'#34d399',scale:1.1,opacity:1};
-  drawAll();await sleep(400);
-  animState={};drawAll();
-  log(`✓ ${val} inserted`,'success');
-  setInfo(`<span class="hl">${val}</span> inserted and heap property maintained.`);
-  document.getElementById('insertVal').value='';
-  animating=false;
-}
-
-async function animExtract(){
-  if(animating)return;
-  if(heap.length===0){log('Heap is empty','error');return;}
-  animating=true;
-  const top=heap[0];
-  log(`Extracting root: ${top}`,'info');
-  setInfo(`Extracting <span class="hl">${top}</span> — moving last element to root...`);
-  animState[0]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1.3,opacity:1};
-  drawAll();await sleep(getSpeed());
-  // Fade out root
-  for(let j=10;j>=0;j--){animState[0]={color:'#ff6b6b',glowColor:'#ff6b6b',scale:1.3,opacity:j/10};drawAll();await sleep(25);}
-  heap[0]=heap[heap.length-1];heap.pop();
-  animState={};
-  if(heap.length>0){
-    animState[0]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.3,opacity:1};
-    drawAll();await sleep(getSpeed());
-    // Animated heapify-down
-    let i=0;
-    while(true){
-      let best=i,l=2*i+1,r=2*i+2;
-      comparisons++;
-      if(l<heap.length&&cmp(heap[l],heap[best]))best=l;
-      if(r<heap.length&&cmp(heap[r],heap[best]))best=r;
-      if(best!==i){
-        animState[i]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.2,opacity:1};
-        animState[best]={color:'#f59e0b',glowColor:'#f59e0b',scale:1.2,opacity:1};
-        drawAll();await sleep(getSpeed());
-        [heap[i],heap[best]]=[heap[best],heap[i]];
-        log(`  Swap ${heap[i]} ↓ with child ${heap[best]}`,'warn');
-        delete animState[i];i=best;
-      } else {
-        animState[i]={color:'#34d399',glowColor:'#34d399',scale:1.1,opacity:1};
-        drawAll();await sleep(400);
-        break;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Heap — DSViz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --surface: #0f1420;
+        --surface2: #151c2e;
+        --border: #1e2d4a;
+        --accent: #ff6b6b;
+        --accent2: #f59e0b;
+        --accent3: #34d399;
+        --accent4: #a78bfa;
+        --text: #e2e8f0;
+        --text-dim: #64748b;
+        --text-muted: #334155;
       }
-      drawAll();
-    }
-  }
-  animState={};drawAll();
-  log(`✓ Extracted ${top}`,'success');
-  setInfo(`<span class="hl">${top}</span> extracted. New root: <span class="hl">${heap[0]||'—'}</span>.`);
-  animating=false;
-}
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 107, 107, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 107, 107, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background: rgba(8, 11, 18, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        font-family: "Space Mono", monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+      }
+      .page-title {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        letter-spacing: 2px;
+      }
+      .nav-back {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+      .nav-back:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .layout {
+        display: flex;
+        flex: 1;
+        margin-top: 60px;
+        position: relative;
+        z-index: 1;
+      }
+      .sidebar {
+        width: 350px;
+        min-width: 280px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: calc(100vh - 60px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        position: sticky;
+        top: 60px;
+        box-sizing: border-box;
+      }
+      .sidebar > * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .input-field {
+        max-width: 100%;
+      }
+      .sidebar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .sidebar::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+      .sidebar::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+      .sidebar::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+      .sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .sidebar-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .input-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .input-field {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.6rem 0.8rem;
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .input-field:focus {
+        border-color: var(--accent);
+      }
+      .input-field::placeholder {
+        color: var(--text-muted);
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      .btn {
+        padding: 0.6rem 1rem;
+        border-radius: 6px;
+        border: 1px solid;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.5px;
+        min-width: 70px;
+      }
+      .btn-red {
+        background: rgba(255, 107, 107, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .btn-red:hover {
+        background: rgba(255, 107, 107, 0.2);
+      }
+      .btn-amber {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .btn-amber:hover {
+        background: rgba(245, 158, 11, 0.2);
+      }
+      .btn-green {
+        background: rgba(52, 211, 153, 0.1);
+        border-color: var(--accent3);
+        color: var(--accent3);
+      }
+      .btn-green:hover {
+        background: rgba(52, 211, 153, 0.2);
+      }
+      .btn-purple {
+        background: rgba(167, 139, 250, 0.1);
+        border-color: var(--accent4);
+        color: var(--accent4);
+      }
+      .btn-purple:hover {
+        background: rgba(167, 139, 250, 0.2);
+      }
+      .btn-full {
+        width: 100%;
+        text-align: center;
+      }
+      .toggle-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .toggle-btn {
+        flex: 1;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-family: "DM Mono", monospace;
+        font-size: 0.72rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text-dim);
+        background: var(--surface2);
+      }
+      .toggle-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(255, 107, 107, 0.1);
+      }
+      .heap-array {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        min-height: 50px;
+      }
+      .arr-cell {
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        position: relative;
+        transition: all 0.3s;
+      }
+      .arr-cell.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+      }
+      .arr-idx {
+        position: absolute;
+        bottom: -16px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.55rem;
+        color: var(--text-muted);
+      }
+      .speed-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .speed-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+      }
+      .log {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        max-width: 300px;
+        z-index: 200;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        display: none;
+      }
+      .log-entry {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        line-height: 1.6;
+        color: var(--text-dim);
+        animation: popIn 0.4s ease-out forwards;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+      @keyframes popIn {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes popOut {
+        0% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.9);
+        }
+      }
+      .log-entry.fade-out {
+        animation: popOut 0.4s ease-in forwards !important;
+      }
+      .log-entry.success {
+        color: var(--accent3);
+        border-color: var(--accent3);
+      }
+      .log-entry.error {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .log-entry.info {
+        color: #00e5ff;
+        border-color: #00e5ff;
+      }
+      .log-entry.warn {
+        color: var(--accent2);
+        border-color: var(--accent2);
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .preset-chip {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+      .preset-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .canvas-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .canvas-header {
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .canvas-title {
+        font-size: 0.8rem;
+        font-family: "DM Mono", monospace;
+        color: var(--text-dim);
+      }
+      .stats-row {
+        display: flex;
+        gap: 1.5rem;
+      }
+      .stat {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+      .stat span {
+        color: var(--accent);
+      }
+      #heapCanvas {
+        flex: 1;
+        width: 100%;
+      }
+      .info-bar {
+        padding: 0.75rem 2rem;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+      }
+      .info-msg {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+      .info-msg .hl {
+        color: var(--accent);
+      }
+      .mobile-toggle {
+        display: none;
+      }
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          position: fixed;
+          top: 143px;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: auto;
+          max-height: 80vh;
+          border-right: none;
+          border-top: 1px solid var(--border);
+          border-radius: 12px 12px 0 0;
+          transform: translateY(calc(100% - 60px));
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 105;
+          box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+          touch-action: none;
+          overflow-y: auto;
+        }
+        .sidebar.active {
+          transform: translateY(0);
+          z-index: 120;
+        }
+        .sidebar::before {
+          content: "";
+          position: absolute;
+          top: 8px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 50px;
+          height: 5px;
+          background: var(--border);
+          border-radius: 3px;
+          cursor: grab;
+          z-index: 15;
+        }
+        .sidebar::before:active {
+          cursor: grabbing;
+        }
+        .log {
+          position: fixed !important;
+          bottom: 70px !important;
+          top: auto !important;
+          right: 10px !important;
+          left: 10px !important;
+          max-width: none !important;
+          max-height: 200px !important;
+          overflow-y: auto !important;
+          z-index: 125 !important;
+          background: var(--surface) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 8px !important;
+          padding: 0.5rem !important;
+        }
+        #heapCanvas {
+          min-height: 400px;
+        }
+      }
+      @media (max-width: 600px) {
+        .sidebar {
+          height: 80vh;
+          max-height: 80vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="index.html" class="logo">DS/VIZ</a>
+      <span class="page-title">HEAP / PRIORITY QUEUE</span>
+      <a href="index.html" class="nav-back">← Home</a>
+    </nav>
 
-async function animHeapSort(){
-  if(animating)return;
-  if(heap.length===0){log('Heap is empty','error');return;}
-  animating=true;
-  log('Starting heap sort...','info');
-  setInfo(`Heap Sort — extracting elements in <span class="hl">${heapType==='max'?'descending':'ascending'}</span> order...`);
-  const sorted=[];
-  while(heap.length>0){
-    const top=heap[0];
-    animState[0]={color:'#a78bfa',glowColor:'#a78bfa',scale:1.3,opacity:1};
-    drawAll();await sleep(getSpeed());
-    for(let j=10;j>=0;j--){animState[0]={color:'#a78bfa',glowColor:'#a78bfa',scale:1.3,opacity:j/10};drawAll();await sleep(20);}
-    sorted.push(top);
-    heap[0]=heap[heap.length-1];heap.pop();
-    animState={};
-    if(heap.length>0){let i=0;while(true){let best=i,l=2*i+1,r=2*i+2;if(l<heap.length&&cmp(heap[l],heap[best]))best=l;if(r<heap.length&&cmp(heap[r],heap[best]))best=r;if(best!==i){[heap[i],heap[best]]=[heap[best],heap[i]];i=best;}else break;}drawAll();}
-    drawAll();
-  }
-  animState={};drawAll();
-  log(`✓ Sorted: [${sorted.join(', ')}]`,'success');
-  setInfo(`Heap Sort complete! Result: <span class="hl">[${sorted.join(', ')}]</span>`);
-  animating=false;
-}
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Heap Type</div>
+          <div class="toggle-row">
+            <button
+              class="toggle-btn active"
+              id="maxBtn"
+              onclick="setHeapType('max')"
+            >
+              Max-Heap
+            </button>
+            <button class="toggle-btn" id="minBtn" onclick="setHeapType('min')">
+              Min-Heap
+            </button>
+          </div>
+        </div>
 
-async function loadPreset(vals){
-  if(animating)return;
-  clearHeap();
-  log(`Loading preset...`,'info');
-  for(let v of vals)heap.push(v);
-  for(let i=Math.floor(heap.length/2)-1;i>=0;i--)heapifyDown(i);
-  drawAll();
-  log(`✓ Loaded: [${heap.join(', ')}]`,'success');
-  setInfo(`Preset ${heapType}-heap loaded with <span class="hl">${heap.length}</span> elements.`);
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Insert</div>
+          <div class="input-row">
+            <input
+              id="insertVal"
+              class="input-field"
+              type="number"
+              placeholder="Value (1–99)"
+            />
+            <button
+              class="btn btn-red"
+              onclick="
+                animInsert();
+                closeSidebarMobile();
+              "
+            >
+              Push
+            </button>
+          </div>
+        </div>
 
-function clearHeap(){
-  if(animating)return;
-  heap=[];animState={};comparisons=0;drawAll();
-  document.getElementById('log').innerHTML='';
-  setInfo('Heap cleared.');
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Extract</div>
+          <button
+            class="btn btn-amber btn-full"
+            onclick="
+              animExtract();
+              closeSidebarMobile();
+            "
+          >
+            🔺 Extract Root (Max/Min)
+          </button>
+        </div>
 
-document.getElementById('insertVal').addEventListener('keydown',e=>{if(e.key==='Enter')animInsert();});
+        <div class="sidebar-section">
+          <div class="sidebar-label">Build Heap</div>
+          <button
+            class="btn btn-green btn-full"
+            onclick="
+              animHeapSort();
+              closeSidebarMobile();
+            "
+          >
+            ▶ Heap Sort Animation
+          </button>
+        </div>
 
-// Mobile swipe functionality
-const sidebar=document.querySelector('.sidebar');
-if(window.innerWidth<=900){
-  let touchStartY=0,touchStartX=0,isDragging=false;
-  const minSwipeDistance=10,maxVelocityTime=500;
-  let lastTouchTime=0,lastTouchY=0;
-  
-  sidebar.addEventListener('touchstart',(e)=>{
-    touchStartY=e.touches[0].clientY;
-    touchStartX=e.touches[0].clientX;
-    isDragging=true;
-    lastTouchTime=Date.now();
-    lastTouchY=touchStartY;
-    sidebar.style.transition='none';
-  },false);
-  
-  sidebar.addEventListener('touchmove',(e)=>{
-    if(!isDragging)return;
-    const currentY=e.touches[0].clientY;
-    const offset=currentY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const newTransform=Math.max(0,Math.min(maxOffset,offset));
-    sidebar.style.transform=`translateY(calc(100% - 50px + ${newTransform}px))`;
-    lastTouchY=currentY;
-  },false);
-  
-  sidebar.addEventListener('touchend',(e)=>{
-    if(!isDragging)return;
-    isDragging=false;
-    const offset=lastTouchY-touchStartY;
-    const maxOffset=sidebar.offsetHeight-50;
-    const velocity=(lastTouchY-touchStartY)/(Date.now()-lastTouchTime);
-    const threshold=maxOffset*0.3;
-    const isOpen=sidebar.classList.contains('active');
-    sidebar.style.transition='';
-    if(offset<-threshold||velocity<-0.5){sidebar.classList.add('active');}
-    else if(offset>threshold||velocity>0.5){sidebar.classList.remove('active');}
-    else{isOpen?sidebar.classList.add('active'):sidebar.classList.remove('active');}
-  },false);
-}
+        <div class="sidebar-section">
+          <div class="sidebar-label">Quick Load</div>
+          <div class="presets">
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([41, 39, 33, 18, 27, 21, 14, 12, 11]);
+                closeSidebarMobile();
+              "
+            >
+              Classic Max
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([5, 10, 15, 20, 25, 30]);
+                closeSidebarMobile();
+              "
+            >
+              Sequential
+            </div>
+            <div
+              class="preset-chip"
+              onclick="
+                loadPreset([99, 80, 70, 60, 50, 40, 30, 20, 10]);
+                closeSidebarMobile();
+              "
+            >
+              Desc Order
+            </div>
+            <div class="preset-chip" onclick="clearHeap()">🗑 Clear</div>
+          </div>
+        </div>
 
-// Auto-collapse menu when buttons are clicked
-document.addEventListener('click',(e)=>{
-  if(window.innerWidth<=900&&sidebar.classList.contains('active')){
-    const isBtn=e.target.closest('button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div');
-    const isSidebarHeader=e.target.closest('.sidebar::before')||e.target.closest('.sidebar-drag-area');
-    if(isBtn&&!isSidebarHeader){sidebar.classList.remove('active');}
-  }
-});
+        <div class="sidebar-section">
+          <div class="sidebar-label">Heap Array</div>
+          <div class="heap-array" id="heapArray"></div>
+        </div>
 
-loadPreset([41,39,33,18,27,21,14,12,11]);
-</script>
-</body>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Speed</div>
+          <div class="speed-row">
+            <span class="speed-label">Slow</span>
+            <input type="range" id="speedRange" min="1" max="5" value="3" />
+            <span class="speed-label">Fast</span>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Log</div>
+          <div class="log" id="log"></div>
+        </div>
+      </aside>
+
+      <div class="canvas-area">
+        <div class="canvas-header">
+          <span class="canvas-title" id="heapTypeLabel"
+            >// MAX-HEAP VISUALIZATION</span
+          >
+          <div class="stats-row">
+            <div class="stat">Size: <span id="statSize">0</span></div>
+            <div class="stat">Root: <span id="statRoot">—</span></div>
+            <div class="stat">Comparisons: <span id="statComp">0</span></div>
+          </div>
+        </div>
+        <canvas id="heapCanvas"></canvas>
+        <div class="info-bar">
+          <div class="info-msg" id="infoMsg">
+            Max-Heap: root is always the
+            <span class="hl">largest</span> element. Try Extract Root to see
+            heapify-down!
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let heap = [],
+        heapType = "max",
+        animating = false,
+        comparisons = 0;
+      let animState = {};
+
+      function cmp(a, b) {
+        return heapType === "max" ? a > b : a < b;
+      }
+
+      function setHeapType(t) {
+        if (animating) return;
+        heapType = t;
+        document
+          .getElementById("maxBtn")
+          .classList.toggle("active", t === "max");
+        document
+          .getElementById("minBtn")
+          .classList.toggle("active", t === "min");
+        document.getElementById("heapTypeLabel").textContent =
+          `// ${t.toUpperCase()}-HEAP VISUALIZATION`;
+        document.getElementById("infoMsg").innerHTML =
+          t === "max"
+            ? `Max-Heap: root is always the <span class="hl">largest</span> element.`
+            : `Min-Heap: root is always the <span class="hl">smallest</span> element.`;
+        // Rebuild
+        const old = [...heap];
+        clearHeap();
+        for (let v of old) heap.push(v);
+        for (let i = Math.floor(heap.length / 2) - 1; i >= 0; i--)
+          heapifyDown(i);
+        drawAll();
+        log(`Switched to ${t}-heap`, "info");
+      }
+
+      function heapifyUp(i) {
+        while (i > 0) {
+          const p = Math.floor((i - 1) / 2);
+          comparisons++;
+          if (cmp(heap[i], heap[p])) {
+            [heap[i], heap[p]] = [heap[p], heap[i]];
+            i = p;
+          } else break;
+        }
+      }
+      function heapifyDown(i) {
+        const n = heap.length;
+        while (true) {
+          let best = i,
+            l = 2 * i + 1,
+            r = 2 * i + 2;
+          comparisons++;
+          if (l < n && cmp(heap[l], heap[best])) best = l;
+          if (r < n && cmp(heap[r], heap[best])) best = r;
+          if (best !== i) {
+            [heap[i], heap[best]] = [heap[best], heap[i]];
+            i = best;
+          } else break;
+        }
+      }
+
+      // ── Canvas ────────────────────────────────────────────────
+      const canvas = document.getElementById("heapCanvas");
+      const ctx = canvas.getContext("2d");
+      const NR = 26;
+
+      function resize() {
+        const a = canvas.parentElement;
+        canvas.width = a.clientWidth;
+        canvas.height = a.clientHeight - 100;
+      }
+      window.addEventListener("resize", () => {
+        resize();
+        drawAll();
+      });
+      resize();
+
+      function nodePos(i) {
+        const n = heap.length;
+        const depth = Math.floor(Math.log2(i + 1));
+        const levelStart = Math.pow(2, depth) - 1;
+        const levelCount = Math.min(Math.pow(2, depth), n - levelStart);
+        const posInLevel = i - levelStart;
+        const W = canvas.width,
+          H = canvas.height;
+        const x = (W * (posInLevel + 0.5)) / levelCount;
+        const y = 60 + depth * 80;
+        return { x, y };
+      }
+
+      function getS(i) {
+        return (
+          animState[i] || {
+            color: "#ff6b6b",
+            glowColor: "#ff6b6b",
+            scale: 1,
+            opacity: 1,
+          }
+        );
+      }
+
+      function drawAll() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (heap.length === 0) {
+          ctx.fillStyle = "#1e2d4a44";
+          ctx.font = "14px 'DM Mono',monospace";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            "Empty heap — insert values or load a preset",
+            canvas.width / 2,
+            canvas.height / 2,
+          );
+          updateStats();
+          updateArrayDisplay();
+          return;
+        }
+        // Draw edges
+        for (let i = 1; i < heap.length; i++) {
+          const p = Math.floor((i - 1) / 2);
+          const pp = nodePos(p),
+            cp = nodePos(i);
+          const si = getS(i),
+            sp = getS(p);
+          ctx.save();
+          ctx.globalAlpha = Math.min(si.opacity, sp.opacity);
+          ctx.strokeStyle = i in animState ? animState[i].glowColor : "#1e2d4a";
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = i in animState ? 8 : 0;
+          ctx.shadowColor = ctx.strokeStyle;
+          ctx.beginPath();
+          ctx.moveTo(pp.x, pp.y);
+          ctx.lineTo(cp.x, cp.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Draw nodes
+        for (let i = 0; i < heap.length; i++) {
+          const { x, y } = nodePos(i);
+          const s = getS(i);
+          const r = NR * s.scale;
+          ctx.save();
+          ctx.globalAlpha = s.opacity;
+          ctx.translate(x, y);
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = s.glowColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.fillStyle = "#0f1420";
+          ctx.fill();
+          ctx.strokeStyle = s.color;
+          ctx.lineWidth = i === 0 ? 3 : 2;
+          ctx.stroke();
+          if (i === 0) {
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
+            ctx.strokeStyle = s.color + "44";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = s.color;
+          ctx.font = `bold 13px 'DM Mono',monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(heap[i], 0, 0);
+          ctx.fillStyle = s.color + "66";
+          ctx.font = "9px 'DM Mono',monospace";
+          ctx.fillText(`[${i}]`, 0, r + 12);
+          ctx.restore();
+        }
+        updateStats();
+        updateArrayDisplay();
+      }
+
+      function updateStats() {
+        document.getElementById("statSize").textContent = heap.length;
+        document.getElementById("statRoot").textContent = heap.length
+          ? heap[0]
+          : "—";
+        document.getElementById("statComp").textContent = comparisons;
+      }
+
+      function updateArrayDisplay() {
+        const el = document.getElementById("heapArray");
+        el.innerHTML = "";
+        heap.forEach((v, i) => {
+          const cell = document.createElement("div");
+          cell.className = "arr-cell" + (i in animState ? " active" : "");
+          cell.innerHTML = `${v}<span class="arr-idx">${i}</span>`;
+          el.appendChild(cell);
+        });
+      }
+
+      // ── Helpers ───────────────────────────────────────────────
+      function getSpeed() {
+        const v = parseInt(document.getElementById("speedRange").value);
+        return [600, 450, 300, 180, 80][v - 1];
+      }
+      function log(msg, type = "") {
+        const el = document.getElementById("log");
+        const d = document.createElement("div");
+        d.className = "log-entry " + type;
+        d.textContent = "> " + msg;
+        el.appendChild(d);
+        el.style.display = "block";
+        setTimeout(() => {
+          d.classList.add("fade-out");
+          setTimeout(() => {
+            d.remove();
+            if (el.children.length === 0) el.style.display = "none";
+          }, 400);
+        }, 3500);
+      }
+      function setInfo(msg) {
+        document.getElementById("infoMsg").innerHTML = msg;
+      }
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      async function animInsert() {
+        if (animating) return;
+        const val = parseInt(document.getElementById("insertVal").value);
+        if (isNaN(val) || val < 1 || val > 999) {
+          log("Enter valid value", "error");
+          return;
+        }
+        animating = true;
+        heap.push(val);
+        let i = heap.length - 1;
+        animState[i] = {
+          color: "#ff6b6b",
+          glowColor: "#ff6b6b",
+          scale: 1.4,
+          opacity: 0,
+        };
+        drawAll();
+        for (let j = 0; j <= 10; j++) {
+          animState[i] = {
+            color: "#ff6b6b",
+            glowColor: "#ff6b6b",
+            scale: 1.4 - 0.04 * j,
+            opacity: j / 10,
+          };
+          drawAll();
+          await sleep(20);
+        }
+        log(`Inserted ${val} at index ${i}`, "info");
+        setInfo(
+          `Bubbling <span class="hl">${val}</span> up to maintain heap property...`,
+        );
+        // Animated heapify-up
+        while (i > 0) {
+          const p = Math.floor((i - 1) / 2);
+          comparisons++;
+          animState[i] = {
+            color: "#f59e0b",
+            glowColor: "#f59e0b",
+            scale: 1.15,
+            opacity: 1,
+          };
+          animState[p] = {
+            color: "#f59e0b",
+            glowColor: "#f59e0b",
+            scale: 1.15,
+            opacity: 1,
+          };
+          drawAll();
+          await sleep(getSpeed());
+          if (cmp(heap[i], heap[p])) {
+            [heap[i], heap[p]] = [heap[p], heap[i]];
+            log(`  Swap ${heap[p]} ↑ with parent ${heap[i]}`, "warn");
+            delete animState[i];
+            delete animState[p];
+            i = p;
+          } else {
+            log(`  ${val} in correct position`, "success");
+            delete animState[i];
+            delete animState[p];
+            break;
+          }
+          drawAll();
+        }
+        animState[i] = {
+          color: "#34d399",
+          glowColor: "#34d399",
+          scale: 1.1,
+          opacity: 1,
+        };
+        drawAll();
+        await sleep(400);
+        animState = {};
+        drawAll();
+        log(`✓ ${val} inserted`, "success");
+        setInfo(
+          `<span class="hl">${val}</span> inserted and heap property maintained.`,
+        );
+        document.getElementById("insertVal").value = "";
+        animating = false;
+      }
+
+      async function animExtract() {
+        if (animating) return;
+        if (heap.length === 0) {
+          log("Heap is empty", "error");
+          return;
+        }
+        animating = true;
+        const top = heap[0];
+        log(`Extracting root: ${top}`, "info");
+        setInfo(
+          `Extracting <span class="hl">${top}</span> — moving last element to root...`,
+        );
+        animState[0] = {
+          color: "#ff6b6b",
+          glowColor: "#ff6b6b",
+          scale: 1.3,
+          opacity: 1,
+        };
+        drawAll();
+        await sleep(getSpeed());
+        // Fade out root
+        for (let j = 10; j >= 0; j--) {
+          animState[0] = {
+            color: "#ff6b6b",
+            glowColor: "#ff6b6b",
+            scale: 1.3,
+            opacity: j / 10,
+          };
+          drawAll();
+          await sleep(25);
+        }
+        heap[0] = heap[heap.length - 1];
+        heap.pop();
+        animState = {};
+        if (heap.length > 0) {
+          animState[0] = {
+            color: "#f59e0b",
+            glowColor: "#f59e0b",
+            scale: 1.3,
+            opacity: 1,
+          };
+          drawAll();
+          await sleep(getSpeed());
+          // Animated heapify-down
+          let i = 0;
+          while (true) {
+            let best = i,
+              l = 2 * i + 1,
+              r = 2 * i + 2;
+            comparisons++;
+            if (l < heap.length && cmp(heap[l], heap[best])) best = l;
+            if (r < heap.length && cmp(heap[r], heap[best])) best = r;
+            if (best !== i) {
+              animState[i] = {
+                color: "#f59e0b",
+                glowColor: "#f59e0b",
+                scale: 1.2,
+                opacity: 1,
+              };
+              animState[best] = {
+                color: "#f59e0b",
+                glowColor: "#f59e0b",
+                scale: 1.2,
+                opacity: 1,
+              };
+              drawAll();
+              await sleep(getSpeed());
+              [heap[i], heap[best]] = [heap[best], heap[i]];
+              log(`  Swap ${heap[i]} ↓ with child ${heap[best]}`, "warn");
+              delete animState[i];
+              i = best;
+            } else {
+              animState[i] = {
+                color: "#34d399",
+                glowColor: "#34d399",
+                scale: 1.1,
+                opacity: 1,
+              };
+              drawAll();
+              await sleep(400);
+              break;
+            }
+            drawAll();
+          }
+        }
+        animState = {};
+        drawAll();
+        log(`✓ Extracted ${top}`, "success");
+        setInfo(
+          `<span class="hl">${top}</span> extracted. New root: <span class="hl">${heap[0] || "—"}</span>.`,
+        );
+        animating = false;
+      }
+
+      async function animHeapSort() {
+        if (animating) return;
+        if (heap.length === 0) {
+          log("Heap is empty", "error");
+          return;
+        }
+        animating = true;
+        log("Starting heap sort...", "info");
+        setInfo(
+          `Heap Sort — extracting elements in <span class="hl">${heapType === "max" ? "descending" : "ascending"}</span> order...`,
+        );
+        const sorted = [];
+        while (heap.length > 0) {
+          const top = heap[0];
+          animState[0] = {
+            color: "#a78bfa",
+            glowColor: "#a78bfa",
+            scale: 1.3,
+            opacity: 1,
+          };
+          drawAll();
+          await sleep(getSpeed());
+          for (let j = 10; j >= 0; j--) {
+            animState[0] = {
+              color: "#a78bfa",
+              glowColor: "#a78bfa",
+              scale: 1.3,
+              opacity: j / 10,
+            };
+            drawAll();
+            await sleep(20);
+          }
+          sorted.push(top);
+          heap[0] = heap[heap.length - 1];
+          heap.pop();
+          animState = {};
+          if (heap.length > 0) {
+            let i = 0;
+            while (true) {
+              let best = i,
+                l = 2 * i + 1,
+                r = 2 * i + 2;
+              if (l < heap.length && cmp(heap[l], heap[best])) best = l;
+              if (r < heap.length && cmp(heap[r], heap[best])) best = r;
+              if (best !== i) {
+                [heap[i], heap[best]] = [heap[best], heap[i]];
+                i = best;
+              } else break;
+            }
+            drawAll();
+          }
+          drawAll();
+        }
+        animState = {};
+        drawAll();
+        log(`✓ Sorted: [${sorted.join(", ")}]`, "success");
+        setInfo(
+          `Heap Sort complete! Result: <span class="hl">[${sorted.join(", ")}]</span>`,
+        );
+        animating = false;
+      }
+
+      async function loadPreset(vals) {
+        if (animating) return;
+        clearHeap();
+        log(`Loading preset...`, "info");
+        for (let v of vals) heap.push(v);
+        for (let i = Math.floor(heap.length / 2) - 1; i >= 0; i--)
+          heapifyDown(i);
+        drawAll();
+        log(`✓ Loaded: [${heap.join(", ")}]`, "success");
+        setInfo(
+          `Preset ${heapType}-heap loaded with <span class="hl">${heap.length}</span> elements.`,
+        );
+      }
+
+      function clearHeap() {
+        if (animating) return;
+        heap = [];
+        animState = {};
+        comparisons = 0;
+        drawAll();
+        document.getElementById("log").innerHTML = "";
+        setInfo("Heap cleared.");
+      }
+
+      document.getElementById("insertVal").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") animInsert();
+      });
+
+      // Mobile swipe functionality
+      const sidebar = document.querySelector(".sidebar");
+      if (window.innerWidth <= 900) {
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+
+        sidebar.addEventListener("touchstart", (e) => {
+          startY = e.touches[0].clientY;
+          isDragging = true;
+          sidebar.style.transition = "none";
+        });
+
+        sidebar.addEventListener("touchmove", (e) => {
+          if (!isDragging) return;
+
+          currentY = e.touches[0].clientY;
+          let delta = currentY - startY;
+
+          if (sidebar.classList.contains("active")) {
+            // dragging down
+            if (delta > 0) {
+              sidebar.style.transform = `translateY(${delta}px)`;
+            }
+          } else {
+            // dragging up
+            if (delta < 0) {
+              const collapsedOffset = sidebar.offsetHeight - 60;
+              sidebar.style.transform = `translateY(${collapsedOffset + delta}px)`;
+            }
+          }
+        });
+
+        function closeSidebarMobile() {
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove("active");
+          }
+        }
+        sidebar.addEventListener("touchend", () => {
+          isDragging = false;
+          sidebar.style.transition = "transform 0.3s ease";
+
+          let delta = currentY - startY;
+
+          if (delta < -50) {
+            // swipe up → open
+            sidebar.classList.add("active");
+          } else if (delta > 50) {
+            // swipe down → close
+            sidebar.classList.remove("active");
+          } else {
+            // snap back
+            if (sidebar.classList.contains("active")) {
+              sidebar.classList.add("active");
+            } else {
+              sidebar.classList.remove("active");
+            }
+          }
+
+          sidebar.style.transform = "";
+        });
+      }
+
+      // Auto-collapse menu when buttons are clicked
+      document.addEventListener("click", (e) => {
+        if (window.innerWidth <= 900 && sidebar.classList.contains("active")) {
+          const isBtn = e.target.closest(
+            "button,.btn,.toggle-btn,.toggle-row,.node-chip,.preset-chip,.toggle-row div",
+          );
+          const isSidebarHeader = e.target.closest(".sidebar::before");
+          if (isBtn && !isSidebarHeader) {
+            sidebar.classList.remove("active");
+          }
+        }
+      });
+
+      function closeSidebarMobile() {
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove("active");
+        }
+      }
+
+      loadPreset([41, 39, 33, 18, 27, 21, 14, 12, 11]);
+    </script>
+  </body>
 </html>
