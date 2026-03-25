@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSViz — Data Structures Visualized</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b12;
+    --surface: #0f1420;
+    --surface2: #151c2e;
+    --border: #1e2d4a;
+    --accent: #00e5ff;
+    --accent2: #ff6b6b;
+    --accent3: #a78bfa;
+    --accent4: #34d399;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-muted: #334155;
+    --glow: 0 0 20px rgba(0,229,255,0.3);
+    --glow-red: 0 0 20px rgba(255,107,107,0.3);
+    --glow-purple: 0 0 20px rgba(167,139,250,0.3);
+    --glow-green: 0 0 20px rgba(52,211,153,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Nav */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 2rem;
+    background: rgba(8,11,18,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    letter-spacing: -1px;
+  }
+  .logo span { color: var(--text-dim); }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .nav-links a:hover {
+    color: var(--accent);
+    border-color: var(--border);
+    background: var(--surface);
+  }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+  }
+
+  .hero-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.3);
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero h1 {
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -3px;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero h1 .cyan { color: var(--accent); text-shadow: var(--glow); }
+  .hero h1 .dim { color: var(--text-muted); }
+
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    max-width: 500px;
+    line-height: 1.7;
+    font-weight: 400;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    max-width: 1100px;
+    width: 100%;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .ds-card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    text-align: left;
+  }
+  .ds-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 12px;
+  }
+  .ds-card:hover { transform: translateY(-4px); border-color: var(--card-accent, var(--accent)); box-shadow: 0 0 30px var(--card-glow, rgba(0,229,255,0.15)); }
+  .ds-card:hover::before { opacity: 1; }
+
+  .ds-card.bst { --card-accent: var(--accent); --card-glow: rgba(0,229,255,0.15); }
+  .ds-card.avl { --card-accent: var(--accent3); --card-glow: rgba(167,139,250,0.15); }
+  .ds-card.heap { --card-accent: var(--accent2); --card-glow: rgba(255,107,107,0.15); }
+  .ds-card.hash { --card-accent: var(--accent4); --card-glow: rgba(52,211,153,0.15); }
+  .ds-card.graph { --card-accent: #f59e0b; --card-glow: rgba(245,158,11,0.15); }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .card-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+  }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--card-accent, var(--accent));
+  }
+  .card-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-family: 'DM Mono', monospace;
+  }
+  .card-ops {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 1rem;
+  }
+  .card-ops span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Floating orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 8s ease-in-out infinite;
+  }
+  .orb1 { width: 400px; height: 400px; background: rgba(0,229,255,0.06); top: -100px; right: -100px; animation-delay: 0s; }
+  .orb2 { width: 300px; height: 300px; background: rgba(167,139,250,0.06); bottom: 100px; left: -100px; animation-delay: 3s; }
+  .orb3 { width: 200px; height: 200px; background: rgba(255,107,107,0.04); bottom: 200px; right: 200px; animation-delay: 5s; }
+
+  @keyframes orbFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hero-cards { grid-template-columns: 1fr 1fr; }
+    .hero {
+      padding: 5rem 1.5rem 2rem;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 6vw, 4rem);
+    }
+    .hero p {
+      font-size: 0.95rem;
+      max-width: 100%;
+    }
+  }
+  @media (max-width: 480px) {
+    .hero-cards { grid-template-columns: 1fr; }
+    .hero {
+      padding: 4rem 1rem 2rem;
+    }
+    .hero h1 {
+      font-size: 1.6rem;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    .hero-badge {
+      font-size: 0.65rem;
+      padding: 0.3rem 0.8rem;
+      margin-bottom: 1rem;
+    }
+    .ds-card {
+      padding: 1rem;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+    .card-desc {
+      font-size: 0.7rem;
+    }
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<nav>
+  <div class="logo">DS<span>/</span>VIZ</div>
+  <ul class="nav-links">
+    <li><a href="bst.html">BST</a></li>
+    <li><a href="avl.html">AVL</a></li>
+    <li><a href="heap.html">Heap</a></li>
+    <li><a href="hash.html">Hash</a></li>
+    <li><a href="graph.html">Graph</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">// INTERACTIVE DATA STRUCTURES</div>
+  <h1>
+    <span class="dim">FEEL</span><br>
+    <span class="cyan">DATA</span><br>
+    <span class="dim">STRUCTURES</span>
+  </h1>
+  <p>Watch algorithms come alive. Insert, delete, search — every operation animated in real-time. Built for CSE students who want to <em>understand</em>, not just memorize.</p>
+
+  <div class="hero-cards">
+    <a href="bst.html" class="ds-card bst">
+      <span class="card-icon">🌲</span>
+      <div class="card-num">01 / 05</div>
+      <div class="card-title">Binary Search Tree</div>
+      <div class="card-desc">Ordered insertion with O(log n) search on balanced trees</div>
+      <div class="card-ops">
+        <span>Insert</span><span>Delete</span><span>Search</span><span>Traversal</span>
+      </div>
+    </a>
+
+    <a href="avl.html" class="ds-card avl">
+      <span class="card-icon">⚖️</span>
+      <div class="card-num">02 / 05</div>
+      <div class="card-title">AVL Tree</div>
+      <div class="card-desc">Self-balancing BST with automatic rotations — always O(log n)</div>
+      <div class="card-ops">
+        <span>Rotate L</span><span>Rotate R</span><span>Balance</span><span>Height</span>
+      </div>
+    </a>
+
+    <a href="heap.html" class="ds-card heap">
+      <span class="card-icon">🔺</span>
+      <div class="card-num">03 / 05</div>
+      <div class="card-title">Heap / Priority Queue</div>
+      <div class="card-desc">Max-heap & Min-heap with heapify — priority-based extraction</div>
+      <div class="card-ops">
+        <span>Heapify</span><span>Extract Max</span><span>Insert</span><span>Heap Sort</span>
+      </div>
+    </a>
+
+    <a href="hash.html" class="ds-card hash">
+      <span class="card-icon">⚡</span>
+      <div class="card-num">04 / 05</div>
+      <div class="card-title">Hash Table</div>
+      <div class="card-desc">O(1) average search with collision resolution strategies</div>
+      <div class="card-ops">
+        <span>Hash Fn</span><span>Chaining</span><span>Probing</span><span>Load Factor</span>
+      </div>
+    </a>
+
+    <a href="graph.html" class="ds-card graph">
+      <span class="card-icon">🕸️</span>
+      <div class="card-num">05 / 05</div>
+      <div class="card-title">Graph Traversals</div>
+      <div class="card-desc">BFS and DFS on directed/undirected graphs — step by step</div>
+      <div class="card-ops">
+        <span>BFS</span><span>DFS</span><span>Dijkstra</span><span>Shortest Path</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+</body>
+</html>
