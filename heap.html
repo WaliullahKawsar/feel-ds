@@ -729,10 +729,22 @@
         const levelStart = Math.pow(2, depth) - 1;
         const levelCount = Math.min(Math.pow(2, depth), n - levelStart);
         const posInLevel = i - levelStart;
-        const W = canvas.width,
-          H = canvas.height;
-        const x = (W * (posInLevel + 0.5)) / levelCount;
-        const y = 60 + depth * 80;
+        const W = canvas.width;
+        const H = canvas.height;
+        const margin = NR + 12;
+        const usableWidth = Math.max(0, W - margin * 2);
+        const x =
+          levelCount === 1
+            ? W / 2
+            : margin + (usableWidth * (posInLevel + 0.5)) / levelCount;
+        const depthCount = Math.max(1, Math.ceil(Math.log2(n + 1)));
+        const stepCount = Math.max(1, depthCount - 1);
+        const usableHeight = Math.max(0, H - 120);
+        const yStep =
+          depthCount === 1
+            ? 0
+            : Math.min(80, Math.max(34, usableHeight / stepCount));
+        const y = depthCount === 1 ? H / 2 : 60 + depth * yStep;
         return { x, y };
       }
 

@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Huffman Encoding — DSViz</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #080b12;
+        --surface: #0f1420;
+        --surface2: #151c2e;
+        --border: #1e2d4a;
+        --accent: #f472b6;
+        --accent2: #60a5fa;
+        --accent3: #34d399;
+        --accent4: #f59e0b;
+        --text: #e2e8f0;
+        --text-dim: #64748b;
+        --text-muted: #334155;
+        --glow: 0 0 20px rgba(244, 114, 182, 0.28);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Syne", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(244, 114, 182, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(244, 114, 182, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background: rgba(8, 11, 18, 0.9);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .logo {
+        font-family: "Space Mono", monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+        text-shadow: var(--glow);
+      }
+
+      .page-title {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        letter-spacing: 2px;
+      }
+
+      .nav-back {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 0.3rem 0.8rem;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .nav-back:hover {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .layout {
+        display: flex;
+        flex: 1;
+        margin-top: 60px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .sidebar {
+        width: 350px;
+        min-width: 280px;
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        height: calc(100vh - 60px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        position: sticky;
+        top: 60px;
+        box-sizing: border-box;
+      }
+
+      .sidebar > * {
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+
+      .sidebar::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .sidebar::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+
+      .sidebar::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      .sidebar::-webkit-scrollbar-thumb:hover {
+        background: var(--accent);
+      }
+
+      .sidebar-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .sidebar-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        letter-spacing: 3px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .input-field,
+      .text-area {
+        width: 100%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem 0.8rem;
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      .text-area {
+        min-height: 150px;
+        resize: vertical;
+        line-height: 1.6;
+      }
+
+      .input-field:focus,
+      .text-area:focus {
+        border-color: var(--accent);
+      }
+
+      .input-field::placeholder,
+      .text-area::placeholder {
+        color: var(--text-muted);
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .btn {
+        padding: 0.65rem 1rem;
+        border-radius: 6px;
+        border: 1px solid;
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.5px;
+        min-width: 70px;
+      }
+
+      .btn-primary {
+        background: rgba(244, 114, 182, 0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .btn-primary:hover {
+        background: rgba(244, 114, 182, 0.2);
+        box-shadow: 0 0 15px rgba(244, 114, 182, 0.2);
+      }
+
+      .btn-secondary {
+        background: rgba(96, 165, 250, 0.1);
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(96, 165, 250, 0.2);
+      }
+
+      .btn-full {
+        width: 100%;
+        text-align: center;
+      }
+
+      .preset-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .preset-chip {
+        font-family: "DM Mono", monospace;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-dim);
+        transition: all 0.2s;
+      }
+
+      .preset-chip:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .hint {
+        font-family: "DM Mono", monospace;
+        font-size: 0.72rem;
+        line-height: 1.6;
+        color: var(--text-dim);
+      }
+
+      .canvas-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .canvas-header {
+        padding: 1rem 2rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .canvas-title {
+        font-size: 0.8rem;
+        font-family: "DM Mono", monospace;
+        color: var(--text-dim);
+      }
+
+      .stats-row {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .stat {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+
+      .stat span {
+        color: var(--accent);
+      }
+
+      .workspace {
+        flex: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+        gap: 1px;
+        background: var(--border);
+        overflow: hidden;
+      }
+
+      .tree-panel,
+      .table-panel {
+        background: var(--surface);
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .panel-head {
+        padding: 1rem 1.25rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .panel-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        letter-spacing: 3px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+      }
+
+      .panel-subtext {
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        color: var(--text-dim);
+      }
+
+      .tree-stage {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 50% 15%, rgba(244, 114, 182, 0.06), transparent 42%),
+          linear-gradient(180deg, rgba(15, 20, 32, 0.96), rgba(15, 20, 32, 0.99));
+      }
+
+      #treeCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .table-panel {
+        padding: 0;
+      }
+
+      .table-wrap {
+        flex: 1;
+        overflow: auto;
+        padding: 1rem;
+      }
+
+      .table-wrap::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      .table-wrap::-webkit-scrollbar-track {
+        background: var(--surface2);
+      }
+
+      .table-wrap::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      .code-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "DM Mono", monospace;
+        font-size: 0.76rem;
+      }
+
+      .code-table thead th {
+        position: sticky;
+        top: 0;
+        background: #1d3552;
+        color: #eff6ff;
+        padding: 0.7rem 0.6rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        letter-spacing: 0.5px;
+      }
+
+      .code-table tbody td {
+        padding: 0.62rem 0.6rem;
+        border-bottom: 1px solid rgba(30, 45, 74, 0.7);
+        color: var(--text-dim);
+      }
+
+      .code-table tbody tr:nth-child(2n) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .code-table tbody tr:hover {
+        background: rgba(244, 114, 182, 0.06);
+      }
+
+      .code-table .char-cell {
+        color: #e2e8f0;
+        font-weight: 700;
+      }
+
+      .code-table .count-cell {
+        color: var(--accent2);
+      }
+
+      .code-table .code-cell {
+        color: var(--accent3);
+        letter-spacing: 1px;
+      }
+
+      .code-table .size-cell {
+        color: var(--accent4);
+      }
+
+      .code-table tfoot td {
+        padding: 0.8rem 0.6rem;
+        background: #7cc24c;
+        color: #10210c;
+        font-weight: 700;
+        border-top: 1px solid rgba(16, 33, 12, 0.2);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        padding: 0 1rem 1rem;
+      }
+
+      .summary-card {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .summary-label {
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .summary-value {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--accent);
+        line-height: 1.1;
+      }
+
+      .summary-note {
+        font-family: "DM Mono", monospace;
+        font-size: 0.68rem;
+        line-height: 1.5;
+        color: var(--text-dim);
+      }
+
+      .info-bar {
+        padding: 0.75rem 2rem;
+        border-top: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .info-msg {
+        font-family: "DM Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-dim);
+      }
+
+      .info-msg .hl {
+        color: var(--accent);
+      }
+
+      .bits-note {
+        font-family: "DM Mono", monospace;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+      }
+
+      .mobile-toggle {
+        display: none;
+      }
+
+      @media (max-width: 1080px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          position: static;
+          width: 100%;
+          min-width: 0;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .canvas-header,
+        .info-bar {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+      }
+
+      @media (max-width: 600px) {
+        nav {
+          padding: 0.9rem 1rem;
+        }
+
+        .page-title {
+          display: none;
+        }
+
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .canvas-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="index.html" class="logo">DS/VIZ</a>
+      <span class="page-title">HUFFMAN / PREFIX CODING</span>
+      <a href="index.html" class="nav-back">← Home</a>
+    </nav>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Input Text</div>
+          <textarea
+            id="inputText"
+            class="text-area"
+            placeholder="Paste a string or line here..."
+          >successisajourneynotarace</textarea>
+          <div class="hint">
+            Spaces and line breaks are included in the frequency count.
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Build</div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-full" id="buildBtn">Build Tree</button>
+            <button class="btn btn-secondary btn-full" id="sampleBtn">Load Sample</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">Quick Samples</div>
+          <div class="preset-chip-row">
+            <button class="preset-chip" data-sample="successisajourneynotarace">sample</button>
+            <button class="preset-chip" data-sample="hello huffman">hello huffman</button>
+            <button class="preset-chip" data-sample="data structures">data structures</button>
+            <button class="preset-chip" data-sample="aabbbbcccdde">aabbbbcccdde</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-label">How It Works</div>
+          <div class="hint">
+            Huffman coding groups the least frequent characters first, then assigns 0/1 branches from the root to each leaf.
+            The table on the right shows the final code and the bit cost per character.
+          </div>
+        </div>
+      </aside>
+
+      <main class="canvas-area">
+        <div class="canvas-header">
+          <div class="canvas-title">Huffman Tree and Code Table</div>
+          <div class="stats-row">
+            <div class="stat">Chars: <span id="statChars">0</span></div>
+            <div class="stat">Distinct: <span id="statDistinct">0</span></div>
+            <div class="stat">Message Bits: <span id="statMessageBits">0</span></div>
+          </div>
+        </div>
+
+        <section class="workspace">
+          <div class="tree-panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-label">Tree</div>
+                <div class="panel-subtext">0 = left, 1 = right</div>
+              </div>
+              <div class="panel-subtext" id="treeMeta">No data loaded</div>
+            </div>
+            <div class="tree-stage" id="treeStage">
+              <canvas id="treeCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="table-panel">
+            <div class="panel-head">
+              <div>
+                <div class="panel-label">Code Table</div>
+                <div class="panel-subtext">char, count, code, size</div>
+              </div>
+              <div class="panel-subtext" id="tableMeta">0 rows</div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="code-table">
+                <thead>
+                  <tr>
+                    <th>Char</th>
+                    <th>Count</th>
+                    <th>Code</th>
+                    <th>Size</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+                <tfoot>
+                  <tr>
+                    <td id="asciiBitsCell">0x8 = 0 bits</td>
+                    <td id="messageCountCell">0 chars</td>
+                    <td id="codeBitsCell">0 bits</td>
+                    <td id="sizeBitsCell">0 bits</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="summary-label">With HF</div>
+                <div class="summary-value" id="withHfBits">0 bits</div>
+                <div class="summary-note" id="withHfNote">Message bits + table storage</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">Without HF</div>
+                <div class="summary-value" id="withoutHfBits">0 bits</div>
+                <div class="summary-note">ASCII bits for the same input</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="info-bar">
+          <div class="info-msg" id="infoMsg">
+            Type or paste text, then build the Huffman tree.
+          </div>
+          <div class="bits-note" id="deltaBits">Total comparison will appear here.</div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const inputText = document.getElementById("inputText");
+      const buildBtn = document.getElementById("buildBtn");
+      const sampleBtn = document.getElementById("sampleBtn");
+      const treeCanvas = document.getElementById("treeCanvas");
+      const treeStage = document.getElementById("treeStage");
+      const ctx = treeCanvas.getContext("2d");
+
+      const state = {
+        root: null,
+        codes: new Map(),
+        rows: [],
+        totals: {
+          chars: 0,
+          distinct: 0,
+          messageBits: 0,
+          tableAsciiBits: 0,
+          tableCodeBits: 0,
+          totalWithHF: 0,
+          totalWithoutHF: 0,
+        },
+        nextId: 1,
+      };
+
+      const NR = 24;
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function charLabel(ch) {
+        if (ch === " ") return "space";
+        if (ch === "\n") return "\\n";
+        if (ch === "\t") return "\\t";
+        if (ch === "\r") return "\\r";
+        return ch;
+      }
+
+      function charDisplay(ch) {
+        if (ch === " ") return "␠";
+        if (ch === "\n") return "↵";
+        if (ch === "\t") return "⇥";
+        if (ch === "\r") return "␍";
+        return ch;
+      }
+
+      function setInfo(message) {
+        document.getElementById("infoMsg").innerHTML = message;
+      }
+
+      function setBitsNote(message) {
+        document.getElementById("deltaBits").textContent = message;
+      }
+
+      function countChars(text) {
+        const freq = new Map();
+        const order = new Map();
+        let index = 0;
+        for (const ch of Array.from(text)) {
+          freq.set(ch, (freq.get(ch) || 0) + 1);
+          if (!order.has(ch)) order.set(ch, index++);
+        }
+        return { freq, order };
+      }
+
+      function compareNodes(a, b) {
+        if (a.count !== b.count) return a.count - b.count;
+        if (a.order !== b.order) return a.order - b.order;
+        return a.id - b.id;
+      }
+
+      function buildTree(text) {
+        const { freq, order } = countChars(text);
+        const queue = [];
+
+        for (const [ch, count] of freq.entries()) {
+          queue.push({
+            id: state.nextId++,
+            count,
+            chars: [ch],
+            order: order.get(ch) || 0,
+            left: null,
+            right: null,
+            leaf: true,
+          });
+        }
+
+        queue.sort(compareNodes);
+
+        if (queue.length === 0) {
+          return null;
+        }
+
+        if (queue.length === 1) {
+          return queue[0];
+        }
+
+        while (queue.length > 1) {
+          const left = queue.shift();
+          const right = queue.shift();
+          const node = {
+            id: state.nextId++,
+            count: left.count + right.count,
+            chars: [...left.chars, ...right.chars],
+            order: Math.min(left.order, right.order),
+            left,
+            right,
+            leaf: false,
+          };
+          queue.push(node);
+          queue.sort(compareNodes);
+        }
+
+        return queue[0];
+      }
+
+      function buildCodes(node, prefix = "") {
+        if (!node) return;
+        if (node.leaf) {
+          const ch = node.chars[0];
+          state.codes.set(ch, prefix || "0");
+          return;
+        }
+        buildCodes(node.left, prefix + "0");
+        buildCodes(node.right, prefix + "1");
+      }
+
+      function treeDepth(node) {
+        if (!node) return 0;
+        return 1 + Math.max(treeDepth(node.left), treeDepth(node.right));
+      }
+
+      function resizeCanvas() {
+        const rect = treeStage.getBoundingClientRect();
+        treeCanvas.width = Math.max(1, Math.floor(rect.width));
+        treeCanvas.height = Math.max(1, Math.floor(rect.height));
+      }
+
+      function layoutTree() {
+        if (!state.root) return;
+
+        const width = treeCanvas.width;
+        const height = treeCanvas.height;
+        const depthCount = treeDepth(state.root);
+        const topPad = 62;
+        const bottomPad = 56;
+        const margin = NR + 16;
+        const usableWidth = Math.max(0, width - margin * 2);
+        const usableHeight = Math.max(0, height - topPad - bottomPad);
+        const yStep =
+          depthCount <= 1
+            ? 0
+            : Math.min(90, Math.max(48, usableHeight / (depthCount - 1)));
+
+        function assign(node, depth, lo, hi) {
+          if (!node) return;
+          node.x = depthCount <= 1 ? width / 2 : (lo + hi) / 2;
+          node.y = depthCount <= 1 ? height / 2 : topPad + depth * yStep;
+          const nextLo = lo;
+          const nextHi = hi;
+          if (node.left) assign(node.left, depth + 1, nextLo, node.x);
+          if (node.right) assign(node.right, depth + 1, node.x, nextHi);
+        }
+
+        assign(state.root, 0, margin, margin + usableWidth);
+      }
+
+      function drawEdge(from, to, bit) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y + 10);
+        ctx.lineTo(to.x, to.y - 10);
+        ctx.strokeStyle = bit === "0" ? "rgba(244,114,182,0.95)" : "rgba(96,165,250,0.95)";
+        ctx.lineWidth = 1.7;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        const mx = (from.x + to.x) / 2;
+        const my = (from.y + to.y) / 2;
+        ctx.fillStyle = bit === "0" ? "#ff6b6b" : "#60a5fa";
+        ctx.font = "bold 12px 'DM Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(bit, mx, my - 8);
+        ctx.restore();
+      }
+
+      function drawNode(node) {
+        const isRoot = node === state.root;
+        const isLeaf = node.leaf;
+        const radius = isLeaf ? 22 : 24;
+
+        ctx.save();
+        ctx.translate(node.x, node.y);
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = isLeaf ? "rgba(244,114,182,0.35)" : "rgba(96,165,250,0.22)";
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0f1420";
+        ctx.fill();
+        ctx.strokeStyle = isLeaf ? "#f472b6" : "#60a5fa";
+        ctx.lineWidth = isRoot ? 3 : 2;
+        ctx.stroke();
+
+        if (isRoot) {
+          ctx.beginPath();
+          ctx.arc(0, 0, radius + 6, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(244,114,182,0.25)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = isLeaf ? "#f472b6" : "#e2e8f0";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        if (isLeaf) {
+          ctx.font = "bold 12px 'DM Mono', monospace";
+          ctx.fillText(charDisplay(node.chars[0]), 0, -5);
+          ctx.font = "10px 'DM Mono', monospace";
+          ctx.fillStyle = "#60a5fa";
+          ctx.fillText(`(${node.count})`, 0, 9);
+        } else {
+          ctx.font = "bold 13px 'DM Mono', monospace";
+          ctx.fillText(String(node.count), 0, -2);
+          ctx.font = "9px 'DM Mono', monospace";
+          ctx.fillStyle = "#64748b";
+          ctx.fillText(`${node.chars.length} chars`, 0, 12);
+        }
+
+        ctx.restore();
+      }
+
+      function walkTree(node, parent = null, bit = "") {
+        if (!node) return;
+        if (parent) drawEdge(parent, node, bit);
+        if (node.left) walkTree(node.left, node, "0");
+        if (node.right) walkTree(node.right, node, "1");
+        drawNode(node);
+      }
+
+      function renderTree() {
+        ctx.clearRect(0, 0, treeCanvas.width, treeCanvas.height);
+
+        if (!state.root) {
+          ctx.fillStyle = "#1e2d4a88";
+          ctx.font = "14px 'DM Mono', monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("Enter text to generate a Huffman tree", treeCanvas.width / 2, treeCanvas.height / 2);
+          return;
+        }
+
+        layoutTree();
+        walkTree(state.root);
+      }
+
+      function updateTable() {
+        const tableBody = document.getElementById("tableBody");
+        tableBody.innerHTML = "";
+
+        if (!state.rows.length) {
+          document.getElementById("tableMeta").textContent = "0 rows";
+          document.getElementById("asciiBitsCell").textContent = "0x8 = 0 bits";
+          document.getElementById("messageCountCell").textContent = "0 chars";
+          document.getElementById("codeBitsCell").textContent = "0 bits";
+          document.getElementById("sizeBitsCell").textContent = "0 bits";
+          document.getElementById("withHfBits").textContent = "0 bits";
+          document.getElementById("withoutHfBits").textContent = "0 bits";
+          document.getElementById("withHfNote").textContent = "Message bits + table storage";
+          return;
+        }
+
+        for (const row of state.rows) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="char-cell">${escapeHtml(row.label)}</td>
+            <td class="count-cell">${row.count}</td>
+            <td class="code-cell">${escapeHtml(row.code)}</td>
+            <td class="size-cell">${row.size} bits</td>
+          `;
+          tableBody.appendChild(tr);
+        }
+
+        document.getElementById("tableMeta").textContent = `${state.rows.length} rows`;
+        document.getElementById("asciiBitsCell").textContent = `${state.totals.distinct}x8 = ${state.totals.tableAsciiBits} bits`;
+        document.getElementById("messageCountCell").textContent = `${state.totals.chars} chars`;
+        document.getElementById("codeBitsCell").textContent = `${state.totals.tableCodeBits} bits`;
+        document.getElementById("sizeBitsCell").textContent = `${state.totals.messageBits} bits`;
+        document.getElementById("withHfBits").textContent = `${state.totals.totalWithHF} bits`;
+        document.getElementById("withoutHfBits").textContent = `${state.totals.totalWithoutHF} bits`;
+        document.getElementById("withHfNote").textContent = `${state.totals.messageBits} + ${state.totals.tableAsciiBits} + ${state.totals.tableCodeBits} bits`;
+      }
+
+      function updateStats() {
+        document.getElementById("statChars").textContent = state.totals.chars;
+        document.getElementById("statDistinct").textContent = state.totals.distinct;
+        document.getElementById("statMessageBits").textContent = state.totals.messageBits;
+        document.getElementById("treeMeta").textContent = state.root ? `${treeDepth(state.root)} levels` : "No data loaded";
+
+        if (state.totals.chars === 0) {
+          setBitsNote("Total comparison will appear here.");
+          return;
+        }
+
+        const delta = state.totals.totalWithHF - state.totals.totalWithoutHF;
+        const descriptor = delta <= 0 ? `${Math.abs(delta)} bits saved` : `${delta} bits extra`;
+        setBitsNote(`${state.totals.totalWithHF} with HF vs ${state.totals.totalWithoutHF} without HF • ${descriptor}`);
+      }
+
+      function recompute(text) {
+        const normalized = text.replace(/\r\n/g, "\n");
+        state.root = null;
+        state.codes = new Map();
+        state.rows = [];
+        state.totals = {
+          chars: 0,
+          distinct: 0,
+          messageBits: 0,
+          tableAsciiBits: 0,
+          tableCodeBits: 0,
+          totalWithHF: 0,
+          totalWithoutHF: 0,
+        };
+        state.nextId = 1;
+
+        if (!normalized.trim()) {
+          renderTree();
+          updateTable();
+          updateStats();
+          setInfo("Type or paste a string, then build the Huffman tree.");
+          return;
+        }
+
+        const freqMap = new Map();
+        for (const ch of Array.from(normalized)) {
+          freqMap.set(ch, (freqMap.get(ch) || 0) + 1);
+        }
+
+        state.root = buildTree(normalized);
+        buildCodes(state.root);
+
+        state.rows = Array.from(freqMap.entries())
+          .map(([ch, count]) => {
+            const code = state.codes.get(ch) || "0";
+            return {
+              char: ch,
+              label: charLabel(ch),
+              count,
+              code,
+              size: count * code.length,
+            };
+          })
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+        state.totals.chars = Array.from(normalized).length;
+        state.totals.distinct = state.rows.length;
+        state.totals.messageBits = state.rows.reduce((sum, row) => sum + row.size, 0);
+        state.totals.tableAsciiBits = state.totals.distinct * 8;
+        state.totals.tableCodeBits = state.rows.reduce(
+          (sum, row) => sum + row.code.length,
+          0,
+        );
+        state.totals.totalWithHF = state.totals.messageBits + state.totals.tableAsciiBits + state.totals.tableCodeBits;
+        state.totals.totalWithoutHF = state.totals.chars * 8;
+
+        renderTree();
+        updateTable();
+        updateStats();
+        setInfo(`Built Huffman tree for <span class="hl">${state.totals.chars}</span> characters and <span class="hl">${state.totals.distinct}</span> unique symbols.`);
+      }
+
+      function buildCurrentInput() {
+        recompute(inputText.value);
+      }
+
+      function loadSample(sample) {
+        inputText.value = sample;
+        buildCurrentInput();
+      }
+
+      buildBtn.addEventListener("click", buildCurrentInput);
+      sampleBtn.addEventListener("click", () => loadSample("successisajourneynotarace"));
+
+      for (const chip of document.querySelectorAll(".preset-chip")) {
+        chip.addEventListener("click", () => loadSample(chip.dataset.sample || ""));
+      }
+
+      inputText.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          buildCurrentInput();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        renderTree();
+      });
+
+      if (window.ResizeObserver) {
+        const observer = new ResizeObserver(() => {
+          resizeCanvas();
+          renderTree();
+        });
+        observer.observe(treeStage);
+      }
+
+      resizeCanvas();
+      buildCurrentInput();
+    </script>
+  </body>
+</html>
