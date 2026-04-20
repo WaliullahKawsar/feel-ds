@@ -283,6 +283,44 @@
         accent-color: var(--accent);
       }
 
+      .step-controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      .step-btn {
+        padding: 0.5rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        background: var(--surface2);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .step-btn:hover:not(:disabled) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .step-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .step-status {
+        font-family: "DM Mono", monospace;
+        font-size: 0.7rem;
+        color: var(--text-dim);
+      }
+
+      .step-status .hl {
+        color: var(--accent);
+      }
+
       .canvas-area {
         flex: 1;
         display: flex;
@@ -618,6 +656,16 @@
         </div>
 
         <div class="sidebar-section">
+          <div class="sidebar-label">Step Controls</div>
+          <div class="step-controls">
+            <button class="step-btn" id="prevStepBtn">◀ Prev</button>
+            <button class="step-btn" id="playPauseBtn">⏸ Pause</button>
+            <button class="step-btn" id="nextStepBtn">Next ▶</button>
+          </div>
+          <div class="step-status" id="stepStatus">Step <span class="hl">0/0</span></div>
+        </div>
+
+        <div class="sidebar-section">
           <div class="sidebar-label">Quick Samples</div>
           <div class="preset-chip-row">
             <button class="preset-chip" data-sample="successisajourneynotarace">sample</button>
@@ -722,6 +770,10 @@
       const sampleBtn = document.getElementById("sampleBtn");
       const speedRange = document.getElementById("speedRange");
       const speedValue = document.getElementById("speedValue");
+      const prevStepBtn = document.getElementById("prevStepBtn");
+      const playPauseBtn = document.getElementById("playPauseBtn");
+      const nextStepBtn = document.getElementById("nextStepBtn");
+      const stepStatus = document.getElementById("stepStatus");
       const treeCanvas = document.getElementById("treeCanvas");
       const treeStage = document.getElementById("treeStage");
       const ctx = treeCanvas.getContext("2d");
@@ -744,6 +796,8 @@
         nextId: 1,
         runToken: 0,
         animating: false,
+        animationData: null,
+        stepIndex: 0,
         currentStep: 0,
         totalSteps: 0,
       };
@@ -813,10 +867,98 @@
         return [1250, 900, 650, 420, 220][v - 1];
       }
 
-      function setControlsDisabled(disabled) {
-        buildBtn.disabled = disabled;
-        instantBtn.disabled = disabled;
-        sampleBtn.disabled = disabled;
+      function updateStepControls() {
+        const hasSteps = !!(state.animationData && state.animationData.steps.length);
+        prevStepBtn.disabled = !hasSteps || state.stepIndex <= 0;
+        nextStepBtn.disabled =
+          !hasSteps || state.stepIndex >= state.animationData.steps.length - 1;
+        playPauseBtn.disabled = !hasSteps;
+        playPauseBtn.textContent = state.animating ? "⏸ Pause" : "▶ Play";
+        if (!hasSteps) {
+          stepStatus.innerHTML = `Step <span class="hl">0/0</span>`;
+        } else {
+          stepStatus.innerHTML = `Step <span class="hl">${state.stepIndex + 1}/${state.animationData.steps.length}</span>`;
+        }
+      }
+
+      function stopAutoplay() {
+        state.animating = false;
+        state.runToken++;
+        updateStepControls();
+      }
+
+      function describeStep(stepIndex) {
+        if (!state.animationData) return "";
+        const steps = state.animationData.steps;
+        const step = steps[stepIndex];
+        if (!step) return "";
+        if (step.type === "merge") {
+          return `Step <span class="hl">${stepIndex + 1}/${steps.length}</span>: merge <span class="hl">${nodeLabel(step.left)}</span> (${step.left.count}) + <span class="hl">${nodeLabel(step.right)}</span> (${step.right.count}) -> ${step.parent.count}`;
+        }
+        return `Step <span class="hl">1/${steps.length}</span>: initialize priority queue with ${step.roots.length} leaf nodes.`;
+      }
+
+      function applyStep(stepIndex) {
+        if (!state.animationData) return;
+        const steps = state.animationData.steps;
+        const index = Math.min(Math.max(stepIndex, 0), steps.length - 1);
+        const step = steps[index];
+        state.stepIndex = index;
+        state.currentStep = index + 1;
+        state.totalSteps = steps.length;
+        state.viewRoots = step.roots;
+        if (step.type === "merge") {
+          state.highlightIds = {
+            left: step.left.id,
+            right: step.right.id,
+            parent: step.parent.id,
+          };
+        } else {
+          state.highlightIds = { left: null, right: null, parent: null };
+        }
+
+        if (index === steps.length - 1 && state.viewRoots.length === 1 && !state.animating) {
+          setInfo(
+            `Huffman tree completed for <span class="hl">${state.totals.chars}</span> characters and <span class="hl">${state.totals.distinct}</span> unique symbols.`,
+          );
+        } else {
+          setInfo(describeStep(index));
+        }
+
+        updateStats();
+        renderScene();
+        updateStepControls();
+      }
+
+      async function playFromCurrentStep() {
+        if (!state.animationData) return;
+        if (state.stepIndex >= state.animationData.steps.length - 1) {
+          updateStepControls();
+          return;
+        }
+
+        const token = ++state.runToken;
+        state.animating = true;
+        updateStepControls();
+
+        while (state.animating && state.animationData && state.stepIndex < state.animationData.steps.length - 1) {
+          await sleep(getSpeedMs());
+          if (token !== state.runToken || !state.animating || !state.animationData) {
+            return;
+          }
+          applyStep(state.stepIndex + 1);
+        }
+
+        if (token !== state.runToken) return;
+        state.animating = false;
+        state.highlightIds = { left: null, right: null, parent: null };
+        renderScene();
+        if (state.animationData && state.stepIndex === state.animationData.steps.length - 1) {
+          setInfo(
+            `Huffman tree completed for <span class="hl">${state.totals.chars}</span> characters and <span class="hl">${state.totals.distinct}</span> unique symbols.`,
+          );
+        }
+        updateStepControls();
       }
 
       function countChars(text) {
@@ -1052,8 +1194,8 @@
         const treeMeta = document.getElementById("treeMeta");
         if (!state.viewRoots.length) {
           treeMeta.textContent = "No data loaded";
-        } else if (state.animating) {
-          treeMeta.textContent = `Step ${state.currentStep}/${state.totalSteps}`;
+        } else if (state.animationData) {
+          treeMeta.textContent = `Step ${state.currentStep}/${state.totalSteps}${state.animating ? " (playing)" : ""}`;
         } else if (state.viewRoots.length > 1) {
           treeMeta.textContent = `${state.viewRoots.length} partial trees`;
         } else {
@@ -1071,17 +1213,21 @@
       }
 
       function clearAll() {
+        stopAutoplay();
         state.root = null;
         state.viewRoots = [];
         state.highlightIds = { left: null, right: null, parent: null };
         state.codes = new Map();
         state.rows = [];
         state.totals = emptyTotals();
+        state.animationData = null;
+        state.stepIndex = 0;
         state.currentStep = 0;
         state.totalSteps = 0;
         updateTable();
         updateStats();
         renderScene();
+        updateStepControls();
       }
 
       function buildData(text) {
@@ -1190,12 +1336,13 @@
         state.codes = data.codes;
         state.rows = data.rows;
         state.totals = data.totals;
+        state.animationData = data;
         state.highlightIds = { left: null, right: null, parent: null };
         state.totalSteps = data.steps.length;
       }
 
       async function animateBuildFromInput() {
-        const token = ++state.runToken;
+        stopAutoplay();
         const data = buildData(inputText.value);
 
         if (!data) {
@@ -1206,52 +1353,13 @@
 
         applyComputedData(data);
         updateTable();
-        state.animating = true;
-        setControlsDisabled(true);
-
-        for (let i = 0; i < data.steps.length; i++) {
-          if (token !== state.runToken) return;
-
-          const step = data.steps[i];
-          state.currentStep = i + 1;
-          state.viewRoots = step.roots;
-          if (step.type === "merge") {
-            state.highlightIds = {
-              left: step.left.id,
-              right: step.right.id,
-              parent: step.parent.id,
-            };
-            setInfo(
-              `Step <span class="hl">${i + 1}/${data.steps.length}</span>: merge <span class="hl">${nodeLabel(step.left)}</span> (${step.left.count}) + <span class="hl">${nodeLabel(step.right)}</span> (${step.right.count}) -> ${step.parent.count}`,
-            );
-          } else {
-            state.highlightIds = { left: null, right: null, parent: null };
-            setInfo(
-              `Step <span class="hl">1/${data.steps.length}</span>: initialize priority queue with ${step.roots.length} leaf nodes.`,
-            );
-          }
-
-          updateStats();
-          renderScene();
-          await sleep(getSpeedMs());
-        }
-
-        if (token !== state.runToken) return;
-
-        state.animating = false;
-        state.highlightIds = { left: null, right: null, parent: null };
-        state.currentStep = state.totalSteps;
-        state.viewRoots = [data.root];
-        updateStats();
-        renderScene();
-        setInfo(
-          `Huffman tree completed for <span class="hl">${state.totals.chars}</span> characters and <span class="hl">${state.totals.distinct}</span> unique symbols.`,
-        );
-        setControlsDisabled(false);
+        state.stepIndex = 0;
+        applyStep(0);
+        await playFromCurrentStep();
       }
 
       function buildInstantFromInput() {
-        state.runToken++;
+        stopAutoplay();
         const data = buildData(inputText.value);
         if (!data) {
           clearAll();
@@ -1259,15 +1367,9 @@
           return;
         }
         applyComputedData(data);
-        state.animating = false;
-        state.currentStep = state.totalSteps;
-        state.viewRoots = [data.root];
         updateTable();
-        updateStats();
-        renderScene();
-        setInfo(
-          `Built Huffman tree instantly for <span class="hl">${state.totals.chars}</span> characters and <span class="hl">${state.totals.distinct}</span> unique symbols.`,
-        );
+        state.stepIndex = data.steps.length - 1;
+        applyStep(state.stepIndex);
       }
 
       function loadSample(sample, autoAnimate = true) {
@@ -1286,6 +1388,27 @@
 
       speedRange.addEventListener("input", () => {
         speedValue.textContent = speedRange.value;
+      });
+
+      playPauseBtn.addEventListener("click", () => {
+        if (!state.animationData) return;
+        if (state.animating) {
+          stopAutoplay();
+          return;
+        }
+        playFromCurrentStep();
+      });
+
+      nextStepBtn.addEventListener("click", () => {
+        if (!state.animationData) return;
+        stopAutoplay();
+        applyStep(state.stepIndex + 1);
+      });
+
+      prevStepBtn.addEventListener("click", () => {
+        if (!state.animationData) return;
+        stopAutoplay();
+        applyStep(state.stepIndex - 1);
       });
 
       for (const chip of document.querySelectorAll(".preset-chip")) {
@@ -1313,6 +1436,7 @@
 
       speedValue.textContent = speedRange.value;
       resizeCanvas();
+      updateStepControls();
       animateBuildFromInput();
     </script>
   </body>
